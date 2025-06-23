@@ -2,18 +2,18 @@ package ua.edu.ukma.cs.api.routing;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import lombok.SneakyThrows;
+import ua.edu.ukma.cs.api.filters.JwtTokenFilter;
 import ua.edu.ukma.cs.api.routing.exceptions.NoRouteMatchedException;
 import ua.edu.ukma.cs.api.routing.exceptions.NotRegisteredHttpMethod;
 import ua.edu.ukma.cs.api.routing.exceptions.RequestParsingErrorException;
-import ua.edu.ukma.cs.exception.ForbiddenException;
-import ua.edu.ukma.cs.exception.NotFoundException;
-import ua.edu.ukma.cs.exception.ValidationException;
+import ua.edu.ukma.cs.security.SecurityContext;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class Router implements HttpHandler {
     private final List<Route> routes = new ArrayList<>();
@@ -23,7 +23,8 @@ public class Router implements HttpHandler {
     }
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    @SneakyThrows
+    public void handle(HttpExchange exchange) {
         try {
             String path = getPath(exchange);
             Route route = matchRoute(exchange, path);
@@ -31,20 +32,25 @@ public class Router implements HttpHandler {
             Map<String, String> routeParameters = route.getRouteParameters(path);
             InputStream requestBody = exchange.getRequestBody();
 
-            RouteHandlerResult handlerResult = callRouteHandler(routeParameters, requestBody, route);
+            Object securityContext = exchange.getAttribute(JwtTokenFilter.SECURITY_CONTEXT_KEY);
+            Optional<SecurityContext> optionalSecurityContext = securityContext == null
+                    ? Optional.empty()
+                    : Optional.of((SecurityContext) securityContext);
+
+            RouteContext routeContext = new RouteContext(routeParameters, requestBody, optionalSecurityContext);
+            BaseRouteHandler routeHandler = route.getRouteHandlerFactory().create(routeContext);
+            RouteHandlerResult handlerResult = routeHandler.handle();
 
             exchange.sendResponseHeaders(handlerResult.statusCode(), handlerResult.body().length);
             exchange.getResponseBody().write(handlerResult.body());
-        } catch (NoRouteMatchedException | NotFoundException e) {
+        } catch (NoRouteMatchedException e) {
             exchange.sendResponseHeaders(404, 0);
-        } catch (ForbiddenException e) {
-            exchange.sendResponseHeaders(403, 0);
-        } catch (RequestParsingErrorException | ValidationException e) {
+        } catch (RequestParsingErrorException e) {
             exchange.sendResponseHeaders(400, 0);
-        } catch (Exception e) {
+        } catch (NotRegisteredHttpMethod e) {
             exchange.sendResponseHeaders(500, 0);
-        } finally {
-            exchange.close();
+        } catch (Exception e) {
+            throw e;
         }
     }
 
@@ -63,11 +69,5 @@ public class Router implements HttpHandler {
         } catch (IllegalArgumentException e) {
             throw new NotRegisteredHttpMethod(httpMethodStr);
         }
-    }
-
-    private RouteHandlerResult callRouteHandler(Map<String, String> routeParameters, InputStream requestBody, Route route) throws Exception {
-        RouteContext routeContext = new RouteContext(routeParameters, requestBody);
-        BaseRouteHandler routeHandler = route.getRouteHandlerFactory().create(routeContext);
-        return routeHandler.handle();
     }
 }
