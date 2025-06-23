@@ -20,11 +20,11 @@ public class Route {
         this.routeHandlerFactory = routeHandlerFactory;
     }
 
-    public boolean matches(String concreteRoute, HttpMethod httpMethod) {
+    public boolean matches(String path, HttpMethod httpMethod) {
         if (this.httpMethod != httpMethod) {
             return false;
         }
-        return routePattern.matcher(concreteRoute).matches();
+        return routePattern.matcher(path).matches();
     }
 
     public Map<String, String> getRouteParameters(String path) {

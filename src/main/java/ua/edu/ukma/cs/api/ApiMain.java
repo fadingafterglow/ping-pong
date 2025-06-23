@@ -3,6 +3,7 @@ package ua.edu.ukma.cs.api;
 import com.sun.net.httpserver.HttpServer;
 import ua.edu.ukma.cs.api.routing.HttpMethod;
 import ua.edu.ukma.cs.api.routing.Router;
+import ua.edu.ukma.cs.util.SharedObjectMapper;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -20,12 +21,12 @@ public class ApiMain {
         Router router = new Router();
 
         router.addRoute("/login", HttpMethod.GET, routeContext -> {
-            LoginRequest loginRequest = routeContext.objectMapper.readValue(routeContext.getBody(), LoginRequest.class);
+            LoginRequest loginRequest = SharedObjectMapper.S.readValue(routeContext.body(), LoginRequest.class);
             return new LoginRouteHandler(loginRequest);
         });
 
         router.addRoute("/user/(?<userId>\\d+)", HttpMethod.GET, routeContext -> {
-            int id = Integer.parseInt(routeContext.getRouteParameters().get("userId"));
+            int id = Integer.parseInt(routeContext.routeParameters().get("userId"));
             return new GetUserRouteHandler(id);
         });
 

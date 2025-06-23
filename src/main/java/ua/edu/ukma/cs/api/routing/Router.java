@@ -24,13 +24,14 @@ public class Router implements HttpHandler {
         try {
             String path = getPath(exchange);
             Route route = matchRoute(exchange, path);
+
             Map<String, String> routeParameters = route.getRouteParameters(path);
             InputStream requestBody = exchange.getRequestBody();
-            RouteContext routeContext = new RouteContext(routeParameters, requestBody);
-            BaseRouteHandler routeHandler = route.getRouteHandlerFactory().create(routeContext);
-            RouteHandlerResult handlerResult = routeHandler.handle();
-            exchange.sendResponseHeaders(handlerResult.getStatusCode(), handlerResult.getBody().length);
-            exchange.getResponseBody().write(handlerResult.getBody());
+
+            RouteHandlerResult handlerResult = callRouteHandler(routeParameters, requestBody, route);
+
+            exchange.sendResponseHeaders(handlerResult.statusCode(), handlerResult.body().length);
+            exchange.getResponseBody().write(handlerResult.body());
         } catch (NoRouteMatchedException e) {
             exchange.sendResponseHeaders(404, 0);
         } catch (DatabindException e) {
@@ -57,5 +58,11 @@ public class Router implements HttpHandler {
         } catch (IllegalArgumentException e) {
             throw new NotRegisteredHttpMethod(httpMethodStr);
         }
+    }
+
+    private RouteHandlerResult callRouteHandler(Map<String, String> routeParameters, InputStream requestBody, Route route) throws Exception {
+        RouteContext routeContext = new RouteContext(routeParameters, requestBody);
+        BaseRouteHandler routeHandler = route.getRouteHandlerFactory().create(routeContext);
+        return routeHandler.handle();
     }
 }
