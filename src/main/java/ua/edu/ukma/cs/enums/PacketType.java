@@ -9,8 +9,8 @@ public enum PacketType {
     MOVE_RACKET_REQUEST((byte) -3),
 
     JOIN_LOBBY_RESPONSE((byte) 1),
-    START_GAME_RESPONSE((byte) 2),
-    GAME_STATE_RESPONSE((byte) 3);
+    LOBBY_STATE_UPDATE((byte) 2),
+    GAME_STATE_UPDATE((byte) 3);
 
     private final byte code;
 
