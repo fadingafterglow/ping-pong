@@ -1,7 +1,7 @@
 package ua.edu.ukma.cs.game.state;
 
 import lombok.Getter;
-import ua.edu.ukma.cs.game.enums.FieldCollisionOutcome;
+import ua.edu.ukma.cs.enums.FieldCollisionOutcome;
 import ua.edu.ukma.cs.game.configuration.GameConfiguration;
 import ua.edu.ukma.cs.game.objects.Ball;
 import ua.edu.ukma.cs.game.objects.Field;
