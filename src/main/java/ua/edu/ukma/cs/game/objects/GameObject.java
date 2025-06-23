@@ -9,6 +9,6 @@ import lombok.ToString;
 @AllArgsConstructor
 public abstract class GameObject {
 
-    protected int x;
-    protected int y;
+    protected double x;
+    protected double y;
 }
