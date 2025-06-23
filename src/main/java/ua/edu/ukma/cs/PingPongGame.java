@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Executors;
 
 public class PingPongGame {
 
@@ -35,6 +36,7 @@ public class PingPongGame {
         new DefaultMigrationRunner().runMigrations();
 
         HttpServer server = buildServer();
+        server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
         server.start();
     }
 
