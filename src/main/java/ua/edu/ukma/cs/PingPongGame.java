@@ -8,12 +8,13 @@ import java.util.Properties;
 
 public class PingPongGame {
 
-    private static final String PROPERTIES_FILE = "/db-connection.properties";
+    private static final String PROPERTIES_FILE = "/application.properties";
 
     public static void main(String[] args) {
         System.out.println("Starting Ping Pong Game...");
 
-        PersistenceContext.init(loadProperties());
+        Properties properties = loadProperties();
+        PersistenceContext.init(properties);
         new DefaultMigrationRunner().runMigrations();
     }
 
