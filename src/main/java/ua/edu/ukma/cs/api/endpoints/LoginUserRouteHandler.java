@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.api.routing.BaseRouteHandler;
 import ua.edu.ukma.cs.api.routing.RouteHandlerResult;
 import ua.edu.ukma.cs.request.LoginUserRequestDto;
-import ua.edu.ukma.cs.service.UserService;
+import ua.edu.ukma.cs.services.impl.UserService;
 
 @RequiredArgsConstructor
 public class LoginUserRouteHandler extends BaseRouteHandler {

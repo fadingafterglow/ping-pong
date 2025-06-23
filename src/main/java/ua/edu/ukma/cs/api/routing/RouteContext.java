@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.api.routing.exceptions.RequestParsingErrorException;
 import ua.edu.ukma.cs.security.SecurityContext;
-import ua.edu.ukma.cs.util.SharedObjectMapper;
+import ua.edu.ukma.cs.utils.SharedObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;

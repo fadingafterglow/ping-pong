@@ -16,7 +16,7 @@ import ua.edu.ukma.cs.request.LoginUserRequestDto;
 import ua.edu.ukma.cs.request.RegisterUserRequestDto;
 import ua.edu.ukma.cs.repository.UserRepository;
 import ua.edu.ukma.cs.security.JwtServices;
-import ua.edu.ukma.cs.service.UserService;
+import ua.edu.ukma.cs.services.impl.UserService;
 
 import java.io.IOException;
 import java.net.InetAddress;

@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.util;
+package ua.edu.ukma.cs.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

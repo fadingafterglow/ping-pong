@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.service;
+package ua.edu.ukma.cs.services.impl;
 
 import ua.edu.ukma.cs.database.transaction.TransactionDelegate;
 import ua.edu.ukma.cs.exception.ForbiddenException;

@@ -1,7 +1,7 @@
 package ua.edu.ukma.cs.api.routing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import ua.edu.ukma.cs.util.SharedObjectMapper;
+import ua.edu.ukma.cs.utils.SharedObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 
