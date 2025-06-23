@@ -5,6 +5,9 @@ import com.sun.net.httpserver.HttpHandler;
 import ua.edu.ukma.cs.api.routing.exceptions.NoRouteMatchedException;
 import ua.edu.ukma.cs.api.routing.exceptions.NotRegisteredHttpMethod;
 import ua.edu.ukma.cs.api.routing.exceptions.RequestParsingErrorException;
+import ua.edu.ukma.cs.exception.ForbiddenException;
+import ua.edu.ukma.cs.exception.NotFoundException;
+import ua.edu.ukma.cs.exception.ValidationException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,9 +35,11 @@ public class Router implements HttpHandler {
 
             exchange.sendResponseHeaders(handlerResult.statusCode(), handlerResult.body().length);
             exchange.getResponseBody().write(handlerResult.body());
-        } catch (NoRouteMatchedException e) {
+        } catch (NoRouteMatchedException | NotFoundException e) {
             exchange.sendResponseHeaders(404, 0);
-        } catch (RequestParsingErrorException e) {
+        } catch (ForbiddenException e) {
+            exchange.sendResponseHeaders(403, 0);
+        } catch (RequestParsingErrorException | ValidationException e) {
             exchange.sendResponseHeaders(400, 0);
         } catch (Exception e) {
             exchange.sendResponseHeaders(500, 0);

@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.dto;
+package ua.edu.ukma.cs.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateUserRequestDto {
+public class LoginUserRequestDto {
     private String username;
-    private String passwordHash;
+    private String password;
 }

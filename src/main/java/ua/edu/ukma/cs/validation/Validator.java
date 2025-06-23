@@ -17,6 +17,11 @@ public class Validator<T> {
         this.validatable = validatable;
     }
 
+    public Validator<T> notNullNotBlank(Function<T, String> fieldAccessor) {
+        notNull(fieldAccessor);
+        return notBlank(fieldAccessor);
+    }
+
     public <TField> Validator<T> notNull(Function<T, TField> fieldAccessor) {
         return notNull(fieldAccessor, "Field is null");
     }

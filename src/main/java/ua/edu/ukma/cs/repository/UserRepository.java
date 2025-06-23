@@ -10,7 +10,7 @@ import java.util.Optional;
 import ua.edu.ukma.cs.exception.DataBaseException;
 
 public class UserRepository extends BaseRepository {
-    public int createUser(UserEntity entity) {
+    public int create(UserEntity entity) {
         String sql = "INSERT INTO users (username, password_hash) VALUES (?, ?)";
         try (PreparedStatement statement = transactionManager.currentTransaction().prepareStatement(sql, true)) {
             statement.setString(1, entity.getUsername());
