@@ -1,10 +1,10 @@
 package ua.edu.ukma.cs.api.routing;
 
-import com.fasterxml.jackson.databind.DatabindException;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import ua.edu.ukma.cs.api.routing.exceptions.NoRouteMatchedException;
 import ua.edu.ukma.cs.api.routing.exceptions.NotRegisteredHttpMethod;
+import ua.edu.ukma.cs.api.routing.exceptions.RequestParsingErrorException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +34,7 @@ public class Router implements HttpHandler {
             exchange.getResponseBody().write(handlerResult.body());
         } catch (NoRouteMatchedException e) {
             exchange.sendResponseHeaders(404, 0);
-        } catch (DatabindException e) {
+        } catch (RequestParsingErrorException e) {
             exchange.sendResponseHeaders(400, 0);
         } catch (Exception e) {
             exchange.sendResponseHeaders(500, 0);

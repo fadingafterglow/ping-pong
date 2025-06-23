@@ -1,9 +1,9 @@
 package ua.edu.ukma.cs.api.routing;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.sun.net.httpserver.HttpExchange;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ua.edu.ukma.cs.api.routing.exceptions.RequestParsingErrorException;
 
 import java.io.*;
 import java.net.URI;
@@ -70,7 +70,7 @@ class RouterTest {
     }
 
     @Test
-    void handle_whenDatabindExceptionThrown_shouldRespond400() throws Exception {
+    void handle_whenRequestParsingErrorExceptionThrown_shouldRespond400() throws Exception {
         HttpExchange exchange = mock(HttpExchange.class);
         when(exchange.getRequestURI()).thenReturn(URI.create("/hello"));
         when(exchange.getRequestMethod()).thenReturn("GET");
@@ -80,7 +80,7 @@ class RouterTest {
         router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler() {
             @Override
             public RouteHandlerResult handle() throws Exception {
-                throw new InvalidFormatException("", new Object(), Object.class);
+                throw new RequestParsingErrorException();
             }
         });
 
