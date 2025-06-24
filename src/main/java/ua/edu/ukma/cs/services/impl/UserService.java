@@ -2,10 +2,10 @@ package ua.edu.ukma.cs.services.impl;
 
 import ua.edu.ukma.cs.database.transaction.TransactionDelegate;
 import ua.edu.ukma.cs.exception.ForbiddenException;
-import ua.edu.ukma.cs.request.RegisterUserRequestDto;
+import ua.edu.ukma.cs.api.request.RegisterUserRequestDto;
 import ua.edu.ukma.cs.entity.UserEntity;
 import ua.edu.ukma.cs.repository.UserRepository;
-import ua.edu.ukma.cs.request.LoginUserRequestDto;
+import ua.edu.ukma.cs.api.request.LoginUserRequestDto;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.security.PasswordHashGenerator;
 import ua.edu.ukma.cs.validation.Validator;
@@ -18,12 +18,12 @@ public class UserService {
     private final PasswordHashGenerator passwordHashGenerator;
     private final JwtServices jwtServices;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, JwtServices jwtServices) {
         this.repository = repository;
+        this.jwtServices = jwtServices;
         this.transactionDelegate = new TransactionDelegate();
         this.readOnlyTransactionDelegate = new TransactionDelegate(true);
         this.passwordHashGenerator = new PasswordHashGenerator();
-        this.jwtServices = new JwtServices();
     }
 
     public int register(RegisterUserRequestDto dto) {

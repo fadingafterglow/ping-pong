@@ -6,19 +6,25 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import ua.edu.ukma.cs.entity.UserEntity;
 
+import java.util.Properties;
+
 public class JwtServices {
-    // TODO: move secret
-    private static final String SECRET = "thisissecret";
-    private static final Algorithm ALGORITHM = Algorithm.HMAC256(SECRET);
+
+    private final Algorithm algorithm;
+
+    public JwtServices(Properties properties) {
+        String secret = properties.getProperty("jwt.secret");
+        this.algorithm = Algorithm.HMAC256(secret);
+    }
 
     public String generateToken(UserEntity user) {
         return JWT.create()
                 .withSubject(user.getUsername())
-                .sign(ALGORITHM);
+                .sign(algorithm);
     }
 
     public SecurityContext verifyToken(String token) throws JWTVerificationException {
-        DecodedJWT jwt = JWT.require(ALGORITHM)
+        DecodedJWT jwt = JWT.require(algorithm)
                 .build()
                 .verify(token);
         return new SecurityContext(jwt.getSubject());

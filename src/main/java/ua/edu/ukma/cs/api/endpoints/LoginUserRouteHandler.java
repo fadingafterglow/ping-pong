@@ -3,7 +3,7 @@ package ua.edu.ukma.cs.api.endpoints;
 import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.api.routing.BaseRouteHandler;
 import ua.edu.ukma.cs.api.routing.RouteHandlerResult;
-import ua.edu.ukma.cs.request.LoginUserRequestDto;
+import ua.edu.ukma.cs.api.request.LoginUserRequestDto;
 import ua.edu.ukma.cs.services.impl.UserService;
 
 @RequiredArgsConstructor

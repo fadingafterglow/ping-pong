@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.request;
+package ua.edu.ukma.cs.api.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterUserRequestDto {
+public class LoginUserRequestDto {
     private String username;
     private String password;
 }
