@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import lombok.SneakyThrows;
 import ua.edu.ukma.cs.exception.ValidationException;
 import ua.edu.ukma.cs.game.lobby.GameLobby;
+import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
@@ -78,11 +79,19 @@ public class GameService implements IGameService, ITcpRequestHandler {
         }
     }
 
+    private void validate(JoinLobbyRequest request) {
+        Validator.validate(request)
+                .notNull(JoinLobbyRequest::getGameLobbyId)
+                .notBlank(JoinLobbyRequest::getUserJwt)
+                .notNull(JoinLobbyRequest::getSymmetricKey);
+        symmetricEncryptionService.validateKey(request.getSymmetricKey());
+    }
+
     private JoinLobbyResponse handleJoinLobbyRequest(JoinLobbyRequest request, AsynchronousConnection connection) {
         UUID lobbyId = request.getGameLobbyId();
         GameLobby lobby = lobbies.getIfPresent(lobbyId);
-        if (lobby == null || lobby.getState() == GameLobbyState.FINISHED)
-            return new JoinLobbyResponse("Lobby not exists or is finished");
+        if (lobby == null)
+            return new JoinLobbyResponse("Lobby not exists");
         int userId;
         try {
             userId = jwtServices.verifyToken(request.getUserJwt()).getUserId();
@@ -90,20 +99,23 @@ public class GameService implements IGameService, ITcpRequestHandler {
         catch (JWTVerificationException e) {
             return new JoinLobbyResponse("Authentication failed");
         }
-        boolean hasJoined = lobby.join(userId, connection);
-        if (hasJoined) {
-            connection.setAttribute(USER_ID_ATTRIBUTE, userId);
-            return new JoinLobbyResponse(lobby.takeSnapshot());
+        synchronized (lobby) {
+            if (lobby.getState() == GameLobbyState.FINISHED)
+                return new JoinLobbyResponse("Lobby is finished");
+            boolean hasJoined = lobby.join(userId, connection);
+            if (hasJoined) {
+                connection.setAttribute(USER_ID_ATTRIBUTE, userId);
+                GameLobbySnapshot snapshot = lobby.takeSnapshot();
+                sendGameLobbyStateUpdate(lobby.getOtherConnection(userId), snapshot);
+                return new JoinLobbyResponse(snapshot);
+            }
         }
         return new JoinLobbyResponse("User already in the lobby or it is full");
     }
 
-    private void validate(JoinLobbyRequest request) {
-        Validator.validate(request)
-                .notNull(JoinLobbyRequest::getGameLobbyId)
-                .notBlank(JoinLobbyRequest::getUserJwt)
-                .notNull(JoinLobbyRequest::getSymmetricKey);
-        symmetricEncryptionService.validateKey(request.getSymmetricKey());
+    private void sendGameLobbyStateUpdate(AsynchronousConnection connection, GameLobbySnapshot snapshot) {
+        if (connection == null || connection.isClosed()) return;
+        sendResponse(connection, PacketType.GAME_LOBBY_STATE_UPDATE, snapshot);
     }
 
     private void sendResponse(AsynchronousConnection connection, PacketType type) {

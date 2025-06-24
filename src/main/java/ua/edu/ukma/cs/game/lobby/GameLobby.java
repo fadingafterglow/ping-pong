@@ -18,8 +18,6 @@ public class GameLobby {
             .maxScore(13)
             .build();
 
-    private final Object joinLock;
-
     private final int creatorId;
     private AsynchronousConnection creatorConnection;
 
@@ -32,25 +30,28 @@ public class GameLobby {
     public GameLobby(int creatorId) {
         this.creatorId = creatorId;
         this.lobbyState = GameLobbyState.WAITING;
-        this.joinLock = new Object();
     }
 
     public boolean join(int userId, AsynchronousConnection connection) {
-        synchronized (joinLock) {
-            if (userId == creatorId) {
-                if (creatorConnection == null || creatorConnection.isClosed()) {
-                    creatorConnection = connection;
-                    return true;
-                }
-            } else if (otherPlayerId == null || otherPlayerId == userId) {
-                if (otherPlayerConnection == null || otherPlayerConnection.isClosed()) {
-                    otherPlayerId = userId;
-                    otherPlayerConnection = connection;
-                    return true;
-                }
+        if (userId == creatorId) {
+            if (creatorConnection == null || creatorConnection.isClosed()) {
+                creatorConnection = connection;
+                return true;
             }
-            return false;
+        } else if (otherPlayerId == null || otherPlayerId == userId) {
+            if (otherPlayerConnection == null || otherPlayerConnection.isClosed()) {
+                otherPlayerId = userId;
+                otherPlayerConnection = connection;
+                return true;
+            }
         }
+        return false;
+    }
+
+    public AsynchronousConnection getOtherConnection(int userId) {
+        if (userId == creatorId)
+            return otherPlayerConnection;
+        return creatorConnection;
     }
 
     public GameLobbyState getState() {
