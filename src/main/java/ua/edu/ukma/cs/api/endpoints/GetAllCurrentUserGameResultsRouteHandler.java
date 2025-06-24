@@ -16,6 +16,6 @@ public class GetAllCurrentUserGameResultsRouteHandler extends BaseRouteHandler {
     @Override
     public RouteHandlerResult handle() throws Exception {
         SecurityContext securityContext = routeContext.getSecurityContext().orElseThrow(ForbiddenException::new);
-        return ok(gameResultService.getAllOfCurrentUser(securityContext));
+        return RouteHandlerResult.json(gameResultService.getAllOfCurrentUser(securityContext));
     }
 }

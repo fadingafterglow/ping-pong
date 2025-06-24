@@ -17,6 +17,6 @@ public class GetGameResultByIdRouteHandler extends BaseRouteHandler {
     @Override
     public RouteHandlerResult handle() throws Exception {
         SecurityContext securityContext = routeContext.getSecurityContext().orElseThrow(ForbiddenException::new);
-        return ok(gameResultService.getById(id, securityContext));
+        return RouteHandlerResult.json(gameResultService.getById(id, securityContext));
     }
 }
