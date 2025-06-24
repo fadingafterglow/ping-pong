@@ -1,10 +1,12 @@
 package ua.edu.ukma.cs.services.impl;
 
+import ua.edu.ukma.cs.api.request.GameResultFilterDto;
 import ua.edu.ukma.cs.api.response.GameResultResponse;
 import ua.edu.ukma.cs.database.transaction.TransactionDelegate;
 import ua.edu.ukma.cs.entity.GameResultEntity;
 import ua.edu.ukma.cs.exception.ForbiddenException;
 import ua.edu.ukma.cs.exception.NotFoundException;
+import ua.edu.ukma.cs.filter.GameResultFilter;
 import ua.edu.ukma.cs.mapping.GameResultMapper;
 import ua.edu.ukma.cs.repository.GameResultRepository;
 import ua.edu.ukma.cs.security.SecurityContext;
@@ -45,10 +47,11 @@ public class GameResultService implements IGameResultService {
     }
 
     @Override
-    public List<GameResultResponse> getAllOfCurrentUser(SecurityContext securityContext) {
+    public List<GameResultResponse> getCurrentUserGameResults(SecurityContext securityContext, GameResultFilterDto filterDto) {
         return readOnlyTransactionDelegate.runInTransaction(() -> {
             int currentUserId = securityContext.getUserId();
-            return repository.getAllUserGameResults(currentUserId)
+            GameResultFilter filter = GameResultFilter.fromDto(filterDto, currentUserId);
+            return repository.getAllByFilter(filter)
                     .stream()
                     .map(mapper::toResponse)
                     .toList();

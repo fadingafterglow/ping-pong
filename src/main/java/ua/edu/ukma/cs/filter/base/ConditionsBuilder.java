@@ -10,6 +10,12 @@ public class ConditionsBuilder {
 
     private final List<String> conditions = new ArrayList<>();
 
+    public ConditionsBuilder expression(Object value, String expression) {
+        if(value == null) return this;
+        conditions.add(expression);
+        return this;
+    }
+
     public ConditionsBuilder exactEquals(Object value, String expression) {
         if(value == null) return this;
         conditions.add(String.format("%s = ?", expression));

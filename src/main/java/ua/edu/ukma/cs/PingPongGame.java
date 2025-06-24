@@ -3,7 +3,7 @@ package ua.edu.ukma.cs;
 import com.sun.net.httpserver.Filter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import ua.edu.ukma.cs.api.endpoints.GetAllCurrentUserGameResultsRouteHandler;
+import ua.edu.ukma.cs.api.endpoints.GetCurrentUserGameResultsRouteHandler;
 import ua.edu.ukma.cs.api.endpoints.GetGameResultByIdRouteHandler;
 import ua.edu.ukma.cs.api.endpoints.LoginUserRouteHandler;
 import ua.edu.ukma.cs.api.endpoints.RegisterUserRouteHandler;
@@ -67,7 +67,7 @@ public class PingPongGame {
         });
 
         router.addRoute("/game-result", HttpMethod.GET, routeContext -> {
-            return new GetAllCurrentUserGameResultsRouteHandler(gameResultService, routeContext);
+            return new GetCurrentUserGameResultsRouteHandler(gameResultService, routeContext);
         });
 
         router.addRoute("/game-result/(?<id>\\d+)", HttpMethod.GET, routeContext -> {

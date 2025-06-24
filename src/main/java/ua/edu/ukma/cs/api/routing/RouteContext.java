@@ -19,12 +19,24 @@ public class RouteContext {
     @Getter
     private final Optional<SecurityContext> securityContext;
 
+    public <T> Optional<T> getOptionalJsonFromBody(Class<T> clazz) {
+        try {
+            return Optional.of(parseJsonFromBody(clazz));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+    }
+
     public <T> T getJsonFromBody(Class<T> clazz) throws RequestParsingErrorException {
         try {
-            return SharedObjectMapper.S.readValue(body, clazz);
+            return parseJsonFromBody(clazz);
         } catch (IOException e) {
             throw new RequestParsingErrorException();
         }
+    }
+
+    private <T> T parseJsonFromBody(Class<T> clazz) throws IOException {
+        return SharedObjectMapper.S.readValue(body, clazz);
     }
 
     public int getIntFromRouteParam(String paramName) throws RequestParsingErrorException {

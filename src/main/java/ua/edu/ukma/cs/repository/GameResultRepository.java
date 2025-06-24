@@ -1,6 +1,7 @@
 package ua.edu.ukma.cs.repository;
 
 import ua.edu.ukma.cs.entity.GameResultEntity;
+import ua.edu.ukma.cs.filter.GameResultFilter;
 import ua.edu.ukma.cs.repository.base.BaseRepository;
 import ua.edu.ukma.cs.utils.TimeUtils;
 
@@ -16,7 +17,8 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
             "score", "score",
             "timeFinished", "time_finished",
             "creatorId", "creator_id",
-            "otherUserId", "other_user_id"
+            "otherUserId", "other_user_id",
+            "userId", "(creator_id = ? OR other_user_id = ?)"
     );
 
     public int create(GameResultEntity entity) {
@@ -41,11 +43,11 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
         });
     }
 
-    public List<GameResultEntity> getAllUserGameResults(int userId) {
-        String sql = "SELECT * FROM game_results WHERE creator_id = ? OR other_user_id = ?";
+    public List<GameResultEntity> getAllByFilter(GameResultFilter filter) {
+        String sql = "SELECT * FROM game_results";
+        sql = filter.addFilteringAndPagination(sql, FIELD_EXPRESSION_MAP);
         return withStatementInCurrentTransaction(sql, false, statement -> {
-            statement.setInt(1, userId);
-            statement.setInt(2, userId);
+            filter.setParameters(statement);
             return queryAll(statement);
         });
     }
