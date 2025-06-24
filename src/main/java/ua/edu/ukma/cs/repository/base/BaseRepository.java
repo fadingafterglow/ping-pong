@@ -1,10 +1,11 @@
-package ua.edu.ukma.cs.repository;
+package ua.edu.ukma.cs.repository.base;
 
 import ua.edu.ukma.cs.database.context.PersistenceContext;
 import ua.edu.ukma.cs.database.transaction.TransactionManager;
 import ua.edu.ukma.cs.exception.DataBaseException;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public abstract class BaseRepository {
@@ -29,5 +30,16 @@ public abstract class BaseRepository {
         } catch (SQLException e) {
             throw new DataBaseException(e);
         }
+    }
+
+    public int readGeneratedKey(PreparedStatement statement) {
+        return withSqlExceptionHandling(() -> {
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next())
+                    return generatedKeys.getInt(1);
+                else
+                    throw new DataBaseException("Cannot create entity");
+            }
+        });
     }
 }

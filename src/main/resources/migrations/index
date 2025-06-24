@@ -1,1 +1,2 @@
 /migrations/create_users_table.sql
+/migrations/create_game_results_table.sql

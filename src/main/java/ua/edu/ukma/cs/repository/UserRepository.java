@@ -7,8 +7,8 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 
-import ua.edu.ukma.cs.exception.DataBaseException;
 import ua.edu.ukma.cs.filter.UserExactEqualityFilter;
+import ua.edu.ukma.cs.repository.base.BaseRepository;
 
 public class UserRepository extends BaseRepository {
     private static final Map<String, String> FIELD_EXPRESSION_MAP = Map.of(
@@ -21,13 +21,10 @@ public class UserRepository extends BaseRepository {
         return withStatementInCurrentTransaction(sql, true, statement -> {
             statement.setString(1, entity.getUsername());
             statement.setString(2, entity.getPasswordHash());
+
             statement.executeUpdate();
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next())
-                    return generatedKeys.getInt(1);
-                else
-                    throw new DataBaseException("Cannot create user");
-            }
+
+            return readGeneratedKey(statement);
         });
     }
 

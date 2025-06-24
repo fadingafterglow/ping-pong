@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.repository;
+package ua.edu.ukma.cs.repository.base;
 
 import java.sql.SQLException;
 
