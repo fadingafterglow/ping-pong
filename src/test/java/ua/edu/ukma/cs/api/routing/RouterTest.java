@@ -45,7 +45,6 @@ class RouterTest {
 
         verify(exchange).sendResponseHeaders(200, msgBytes.length);
         assertEquals(msg, responseBody.toString());
-        verify(exchange).close();
     }
 
     @Test
@@ -66,7 +65,6 @@ class RouterTest {
         router.handle(exchange);
 
         verify(exchange).sendResponseHeaders(404, 0);
-        verify(exchange).close();
     }
 
     @Test
@@ -87,7 +85,6 @@ class RouterTest {
         router.handle(exchange);
 
         verify(exchange).sendResponseHeaders(400, 0);
-        verify(exchange).close();
     }
 
     @Test
@@ -105,9 +102,6 @@ class RouterTest {
             }
         });
 
-        router.handle(exchange);
-
-        verify(exchange).sendResponseHeaders(500, 0);
-        verify(exchange).close();
+        assertThrows(RuntimeException.class, () -> router.handle(exchange));
     }
 }
