@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.filter;
+package ua.edu.ukma.cs.filter.base;
 
 import lombok.SneakyThrows;
 
@@ -14,6 +14,13 @@ public class ParametersSetter {
     public ParametersSetter(PreparedStatement preparedStatement, int index) {
         this.preparedStatement = preparedStatement;
         this.index = index;
+    }
+
+    @SneakyThrows
+    public ParametersSetter setExactString(String value) {
+        if (value == null || value.isBlank()) return this;
+        preparedStatement.setString(index++, value);
+        return this;
     }
 
     @SneakyThrows
