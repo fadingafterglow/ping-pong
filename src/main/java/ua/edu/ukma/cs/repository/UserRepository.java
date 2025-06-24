@@ -10,7 +10,7 @@ import java.util.Optional;
 import ua.edu.ukma.cs.filter.UserExactEqualityFilter;
 import ua.edu.ukma.cs.repository.base.BaseRepository;
 
-public class UserRepository extends BaseRepository {
+public class UserRepository extends BaseRepository<UserEntity> {
     private static final Map<String, String> FIELD_EXPRESSION_MAP = Map.of(
             "id", "id",
             "username", "username"
@@ -41,16 +41,12 @@ public class UserRepository extends BaseRepository {
         sql = filter.addFiltering(sql, FIELD_EXPRESSION_MAP);
         return withStatementInCurrentTransaction(sql, false, statement -> {
             filter.setParameters(statement);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    return Optional.of(map(resultSet));
-                }
-                return Optional.empty();
-            }
+            return queryOne(statement);
         });
     }
 
-    private UserEntity map(ResultSet resultSet) throws SQLException {
+    @Override
+    protected UserEntity readEntityFromResultSet(ResultSet resultSet) throws SQLException {
         return UserEntity.builder()
                 .id(resultSet.getInt("id"))
                 .username(resultSet.getString("username"))
