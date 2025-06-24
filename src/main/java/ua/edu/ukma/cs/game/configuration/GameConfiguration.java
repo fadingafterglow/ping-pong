@@ -11,6 +11,7 @@ public record GameConfiguration
         int racketHeight,
         int racketSpeed,
         int ballRadius,
-        int initialBallSpeed
+        int initialBallSpeed,
+        int maxScore
 )
 {}

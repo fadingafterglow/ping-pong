@@ -2,7 +2,6 @@ package ua.edu.ukma.cs.game.objects;
 
 import lombok.Getter;
 import lombok.ToString;
-import ua.edu.ukma.cs.enums.FieldCollisionOutcome;
 
 @Getter
 @ToString

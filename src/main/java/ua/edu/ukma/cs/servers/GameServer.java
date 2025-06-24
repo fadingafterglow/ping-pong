@@ -2,9 +2,12 @@ package ua.edu.ukma.cs.servers;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import ua.edu.ukma.cs.tcp.connection.AsynchronousConnection;
 import ua.edu.ukma.cs.tcp.decoders.IDecoder;
+import ua.edu.ukma.cs.tcp.encoders.IEncoder;
 import ua.edu.ukma.cs.tcp.handlers.ITcpRequestHandler;
 import ua.edu.ukma.cs.tcp.packets.PacketIn;
+import ua.edu.ukma.cs.tcp.packets.PacketOut;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -26,13 +29,15 @@ public class GameServer implements IServer {
 
     private final ITcpRequestHandler requestHandler;
     private final IDecoder<PacketIn> decoder;
+    private final IEncoder<PacketOut> encoder;
 
     private AsynchronousChannelGroup group;
     private AsynchronousServerSocketChannel serverSocket;
 
-    public GameServer(IDecoder<PacketIn> decoder, ITcpRequestHandler tcpRequestHandler, Properties properties) {
+    public GameServer(IDecoder<PacketIn> decoder, IEncoder<PacketOut> encoder, ITcpRequestHandler tcpRequestHandler, Properties properties) {
         this.requestHandler = tcpRequestHandler;
         this.decoder = decoder;
+        this.encoder = encoder;
 
         this.port = Integer.parseInt(properties.getProperty("game.server.port", "10101"));
         this.maxPacketSize = Short.parseShort(properties.getProperty("game.server.maxPacketSize", "1024"));
@@ -75,10 +80,12 @@ public class GameServer implements IServer {
     private class ReadHandler implements CompletionHandler<Integer, ByteBuffer> {
 
         private final AsynchronousSocketChannel socket;
+        private final AsynchronousConnection connection;
         private final ByteBuffer readBuffer;
 
         public ReadHandler(AsynchronousSocketChannel socket) {
             this.socket = socket;
+            this.connection = new AsynchronousConnection(socket, encoder);
             this.readBuffer = ByteBuffer.allocate(maxPacketSize * 2);
         }
 
@@ -98,9 +105,9 @@ public class GameServer implements IServer {
                     PacketIn packet = decoder.decode(readBuffer);
                     if (packet == null)
                         break;
-                    requestHandler.handle(packet, socket);
+                    requestHandler.handle(packet, connection);
                 } catch (Exception e) {
-                    log.error("Cannot decode packet", e);
+                    log.error("Cannot handle packet", e);
                 }
             }
             readBuffer.compact();

@@ -10,6 +10,7 @@ import java.util.Properties;
 
 public class JwtServices {
 
+    private static final String USER_ID_CLAIM = "USER_ID";
     private final Algorithm algorithm;
 
     public JwtServices(Properties properties) {
@@ -20,13 +21,15 @@ public class JwtServices {
     public String generateToken(UserEntity user) {
         return JWT.create()
                 .withSubject(user.getUsername())
+                .withClaim(USER_ID_CLAIM, user.getId())
                 .sign(algorithm);
     }
 
     public SecurityContext verifyToken(String token) throws JWTVerificationException {
         DecodedJWT jwt = JWT.require(algorithm)
+                .withClaimPresence(USER_ID_CLAIM)
                 .build()
                 .verify(token);
-        return new SecurityContext(jwt.getSubject());
+        return new SecurityContext(jwt.getClaim(USER_ID_CLAIM).asInt(), jwt.getSubject());
     }
 }
