@@ -34,7 +34,7 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     }
 
     public Optional<GameResultEntity> getById(int id) {
-        String sql = "SELECT FROM game_results WHERE id = ?";
+        String sql = "SELECT * FROM game_results WHERE id = ?";
         return withStatementInCurrentTransaction(sql, false, statement -> {
            statement.setInt(1, id);
            return queryOne(statement);
@@ -42,7 +42,7 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     }
 
     public List<GameResultEntity> getAllUserGameResults(int userId) {
-        String sql = "SELECT FROM game_results WHERE creator_id = ? OR other_user_id = ?";
+        String sql = "SELECT * FROM game_results WHERE creator_id = ? OR other_user_id = ?";
         return withStatementInCurrentTransaction(sql, false, statement -> {
             statement.setInt(1, userId);
             statement.setInt(2, userId);
