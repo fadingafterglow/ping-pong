@@ -1,20 +1,22 @@
 package ua.edu.ukma.cs.tcp.packets.payload;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class JoinLobbyResponse extends CommonResponse {
+public class JoinLobbyResponse {
+
+    private boolean success;
+    private String message;
     private GameLobbySnapshot lobby;
 
     public JoinLobbyResponse(String message) {
-        super(false, message);
+        this.message = message;
     }
 
     public JoinLobbyResponse(GameLobbySnapshot lobby) {
-        super(true, "Joined");
+        this.success = true;
+        this.message = "Joined";
         this.lobby = lobby;
     }
 }

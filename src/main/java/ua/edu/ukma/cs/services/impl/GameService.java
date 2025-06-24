@@ -8,6 +8,7 @@ import ua.edu.ukma.cs.exception.ValidationException;
 import ua.edu.ukma.cs.game.lobby.GameLobby;
 import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 import ua.edu.ukma.cs.game.lobby.GameLobbyState;
+import ua.edu.ukma.cs.game.state.GameStateSnapshot;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
 import ua.edu.ukma.cs.services.IGameService;
@@ -19,6 +20,7 @@ import ua.edu.ukma.cs.tcp.packets.PacketOut;
 import ua.edu.ukma.cs.tcp.packets.PacketType;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyRequest;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyResponse;
+import ua.edu.ukma.cs.tcp.packets.payload.StartGameRequest;
 import ua.edu.ukma.cs.utils.SharedObjectMapper;
 import ua.edu.ukma.cs.validation.Validator;
 
@@ -26,6 +28,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class GameService implements IGameService, ITcpRequestHandler {
@@ -38,6 +43,9 @@ public class GameService implements IGameService, ITcpRequestHandler {
     private final ISymmetricEncryptionService symmetricEncryptionService;
 
     private final Cache<UUID, GameLobby> lobbies;
+    private final int startDelay;
+    private final int updateInterval;
+    private final ScheduledExecutorService gameScheduler;
 
     public GameService(JwtServices jwtServices, IAsymmetricEncryptionService asymmetricEncryptionService,
                        ISymmetricEncryptionService symmetricEncryptionService, Properties properties)
@@ -50,12 +58,16 @@ public class GameService implements IGameService, ITcpRequestHandler {
         this.lobbies = CacheBuilder.newBuilder()
                 .expireAfterAccess(idleTimeout, TimeUnit.MINUTES)
                 .build();
+        this.startDelay = Integer.parseInt(properties.getProperty("game.lobby.startDelay", "5000"));
+        this.updateInterval = Integer.parseInt(properties.getProperty("game.lobby.updateInterval", "15"));
+        int schedulerCoreThreads = Integer.parseInt(properties.getProperty("game.scheduler.coreThreads", "2"));
+        this.gameScheduler = Executors.newScheduledThreadPool(schedulerCoreThreads);
     }
 
     @Override
     public UUID createLobby(int creatorId) {
-        GameLobby lobby = new GameLobby(creatorId);
         UUID lobbyId = UUID.randomUUID();
+        GameLobby lobby = new GameLobby(lobbyId, creatorId);
         lobbies.put(lobbyId, lobby);
         return lobbyId;
     }
@@ -73,6 +85,12 @@ public class GameService implements IGameService, ITcpRequestHandler {
                     if (!response.isSuccess())
                         connection.setAttribute(KEY_ATTRIBUTE, null);
                 }
+                case START_GAME_REQUEST -> {
+                    byte[] key = connection.getAttribute(KEY_ATTRIBUTE);
+                    StartGameRequest request = extractPayload(packet.getData(), d -> symmetricEncryptionService.decrypt(d, key), StartGameRequest.class);
+                    validate(request);
+                    handleStartGameRequest(request, connection.getAttribute(USER_ID_ATTRIBUTE));
+                }
             }
         } catch (GeneralSecurityException | IOException | ValidationException ex) {
             sendResponse(connection, PacketType.BAD_PAYLOAD_RESPONSE);
@@ -85,6 +103,11 @@ public class GameService implements IGameService, ITcpRequestHandler {
                 .notBlank(JoinLobbyRequest::getUserJwt)
                 .notNull(JoinLobbyRequest::getSymmetricKey);
         symmetricEncryptionService.validateKey(request.getSymmetricKey());
+    }
+
+    private void validate(StartGameRequest request) {
+        Validator.validate(request)
+                .notNull(StartGameRequest::getGameLobbyId);
     }
 
     private JoinLobbyResponse handleJoinLobbyRequest(JoinLobbyRequest request, AsynchronousConnection connection) {
@@ -100,22 +123,59 @@ public class GameService implements IGameService, ITcpRequestHandler {
             return new JoinLobbyResponse("Authentication failed");
         }
         synchronized (lobby) {
-            if (lobby.getState() == GameLobbyState.FINISHED)
+            if (lobby.getLobbyState() == GameLobbyState.FINISHED)
                 return new JoinLobbyResponse("Lobby is finished");
             boolean hasJoined = lobby.join(userId, connection);
             if (hasJoined) {
                 connection.setAttribute(USER_ID_ATTRIBUTE, userId);
-                GameLobbySnapshot snapshot = lobby.takeSnapshot();
-                sendGameLobbyStateUpdate(lobby.getOtherConnection(userId), snapshot);
-                return new JoinLobbyResponse(snapshot);
+                sendGameLobbyStateUpdate(lobby.getOtherConnection(userId), lobby.takeLobbySnapshot());
+                return new JoinLobbyResponse(lobby.takeLobbySnapshot(true));
             }
         }
         return new JoinLobbyResponse("User already in the lobby or it is full");
     }
 
+    private void handleStartGameRequest(StartGameRequest request, int userId) {
+        UUID lobbyId = request.getGameLobbyId();
+        GameLobby lobby = lobbies.getIfPresent(lobbyId);
+        if (lobby == null) return;
+        synchronized (lobby) {
+            if (lobby.getCreatorId() != userId)
+                return;
+            boolean hasStarted = lobby.startGame();
+            if (hasStarted) {
+                GameLobbySnapshot snapshot = lobby.takeLobbySnapshot();
+                sendGameLobbyStateUpdate(lobby.getConnection(userId), snapshot);
+                sendGameLobbyStateUpdate(lobby.getOtherConnection(userId), snapshot);
+                ScheduledFuture<?> updater = gameScheduler.scheduleWithFixedDelay(() -> updateGame(lobby), startDelay, updateInterval, TimeUnit.MILLISECONDS);
+                lobby.setUpdater(updater);
+            }
+        }
+    }
+
+    private void updateGame(GameLobby lobby) {
+        boolean shouldContinue = lobby.updateGameState();
+        AsynchronousConnection connection = lobby.getConnection(0);
+        AsynchronousConnection otherConnection = lobby.getOtherConnection(0);
+        GameStateSnapshot gameSnapshot = lobby.takeGameSnapshot();
+        sendGameStateUpdate(connection, gameSnapshot);
+        sendGameStateUpdate(otherConnection, gameSnapshot);
+        if (!shouldContinue) {
+            lobbies.invalidate(lobby.getId());
+            GameLobbySnapshot lobbySnapshot = lobby.takeLobbySnapshot();
+            sendGameLobbyStateUpdate(connection, lobbySnapshot);
+            sendGameLobbyStateUpdate(otherConnection, lobbySnapshot);
+        }
+    }
+
     private void sendGameLobbyStateUpdate(AsynchronousConnection connection, GameLobbySnapshot snapshot) {
         if (connection == null || connection.isClosed()) return;
         sendResponse(connection, PacketType.GAME_LOBBY_STATE_UPDATE, snapshot);
+    }
+
+    private void sendGameStateUpdate(AsynchronousConnection connection, GameStateSnapshot snapshot) {
+        if (connection == null || connection.isClosed()) return;
+        sendResponse(connection, PacketType.GAME_STATE_UPDATE, snapshot);
     }
 
     private void sendResponse(AsynchronousConnection connection, PacketType type) {

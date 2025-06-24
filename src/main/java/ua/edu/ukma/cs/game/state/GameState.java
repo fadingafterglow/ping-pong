@@ -56,20 +56,19 @@ public class GameState {
         return new Racket(racketX, racketY, config.racketWidth(), config.racketHeight());
     }
 
-    public void update() {
+    public boolean update() {
         ball.move();
         FieldCollisionOutcome fieldCollision = ball.collideWith(field);
         if (fieldCollision == FieldCollisionOutcome.LEFT_HIT) {
-            player2Score++;
             ball = createBall();
-            return;
+            return ++player2Score < config.maxScore();
         } else if (fieldCollision == FieldCollisionOutcome.RIGHT_HIT) {
-            player1Score++;
             ball = createBall();
-            return;
+            return ++player1Score < config.maxScore();
         }
         ball.collideWith(player1Racket);
         ball.collideWith(player2Racket);
+        return true;
     }
 
     public void moveRacket(boolean up, boolean isPlayer1) {
