@@ -20,7 +20,6 @@ import ua.edu.ukma.cs.tcp.packets.PacketOut;
 import ua.edu.ukma.cs.tcp.packets.PacketType;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyRequest;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyResponse;
-import ua.edu.ukma.cs.tcp.packets.payload.StartGameRequest;
 import ua.edu.ukma.cs.utils.SharedObjectMapper;
 import ua.edu.ukma.cs.validation.Validator;
 
@@ -37,6 +36,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
 
     private static final String KEY_ATTRIBUTE = "key";
     private static final String USER_ID_ATTRIBUTE = "userId";
+    private static final String LOBBY_ID_ATTRIBUTE = "lobbyId";
 
     private final JwtServices jwtServices;
     private final IAsymmetricEncryptionService asymmetricEncryptionService;
@@ -85,12 +85,8 @@ public class GameService implements IGameService, ITcpRequestHandler {
                     if (!response.isSuccess())
                         connection.setAttribute(KEY_ATTRIBUTE, null);
                 }
-                case START_GAME_REQUEST -> {
-                    byte[] key = connection.getAttribute(KEY_ATTRIBUTE);
-                    StartGameRequest request = extractPayload(packet.getData(), d -> symmetricEncryptionService.decrypt(d, key), StartGameRequest.class);
-                    validate(request);
-                    handleStartGameRequest(request, connection.getAttribute(USER_ID_ATTRIBUTE));
-                }
+                case START_GAME_REQUEST ->
+                    handleStartGameRequest(connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.getAttribute(USER_ID_ATTRIBUTE));
             }
         } catch (GeneralSecurityException | IOException | ValidationException ex) {
             sendResponse(connection, PacketType.BAD_PAYLOAD_RESPONSE);
@@ -103,11 +99,6 @@ public class GameService implements IGameService, ITcpRequestHandler {
                 .notBlank(JoinLobbyRequest::getUserJwt)
                 .notNull(JoinLobbyRequest::getSymmetricKey);
         symmetricEncryptionService.validateKey(request.getSymmetricKey());
-    }
-
-    private void validate(StartGameRequest request) {
-        Validator.validate(request)
-                .notNull(StartGameRequest::getGameLobbyId);
     }
 
     private JoinLobbyResponse handleJoinLobbyRequest(JoinLobbyRequest request, AsynchronousConnection connection) {
@@ -128,6 +119,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
             boolean hasJoined = lobby.join(userId, connection);
             if (hasJoined) {
                 connection.setAttribute(USER_ID_ATTRIBUTE, userId);
+                connection.setAttribute(LOBBY_ID_ATTRIBUTE, lobbyId);
                 sendGameLobbyStateUpdate(lobby.getOtherConnection(userId), lobby.takeLobbySnapshot());
                 return new JoinLobbyResponse(lobby.takeLobbySnapshot(true));
             }
@@ -135,8 +127,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
         return new JoinLobbyResponse("User already in the lobby or it is full");
     }
 
-    private void handleStartGameRequest(StartGameRequest request, int userId) {
-        UUID lobbyId = request.getGameLobbyId();
+    private void handleStartGameRequest(UUID lobbyId, int userId) {
         GameLobby lobby = lobbies.getIfPresent(lobbyId);
         if (lobby == null) return;
         synchronized (lobby) {
