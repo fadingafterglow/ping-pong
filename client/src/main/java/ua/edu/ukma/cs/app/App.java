@@ -1,5 +1,6 @@
 package ua.edu.ukma.cs.app;
 
+import ua.edu.ukma.cs.pages.GamePage;
 import ua.edu.ukma.cs.pages.LoginPage;
 import ua.edu.ukma.cs.pages.RegisterPage;
 import ua.edu.ukma.cs.pages.MainMenuPage;
@@ -13,6 +14,7 @@ import ua.edu.ukma.cs.encryption.AesEncryptionService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.net.Socket;
 
 public class App extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
@@ -25,6 +27,7 @@ public class App extends JFrame {
     private final RegisterPage registerPage;
     private final LoginPage loginPage;
     private final MainMenuPage mainMenuPage;
+    private final GamePage gamePage;
 
     public App() {
         setTitle("Game App");
@@ -35,13 +38,16 @@ public class App extends JFrame {
         registerPage = new RegisterPage(this, registerService);
         loginPage = new LoginPage(this, loginService);
         mainMenuPage = new MainMenuPage(
+            this,
             new CreateLobbyService(httpService),
             new JoinLobbyService(httpService, new AesEncryptionService(), new RsaEncryptionService())
         );
+        gamePage = new GamePage();
 
         cards.add(registerPage, "register");
         cards.add(loginPage, "login");
         cards.add(mainMenuPage, "lobby");
+        cards.add(gamePage, "game");
 
         add(cards);
         showLogin();
@@ -60,6 +66,12 @@ public class App extends JFrame {
     public void showLobby() {
         mainMenuPage.init();
         cardLayout.show(cards, "lobby");
+    }
+
+    public void showGame(Socket socket) {
+        gamePage.setSocket(socket);
+        gamePage.init();
+        cardLayout.show(cards, "game");
     }
 
     public static void main(String[] args) {

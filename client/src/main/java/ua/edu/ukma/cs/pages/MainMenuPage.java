@@ -2,6 +2,8 @@ package ua.edu.ukma.cs.pages;
 
 import ua.edu.ukma.cs.services.CreateLobbyService;
 import ua.edu.ukma.cs.services.JoinLobbyService;
+import ua.edu.ukma.cs.app.App;
+import java.net.Socket;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,8 +13,10 @@ public class MainMenuPage extends BasePage {
     private final JButton createLobbyButton = new JButton("Create new lobby");
     private final JTextField uuidInput = new JTextField(30);
     private final JButton joinButton = new JButton("Join");
+    private final App app;
 
-    public MainMenuPage(CreateLobbyService createLobbyService, JoinLobbyService joinLobbyService) {
+    public MainMenuPage(App app, CreateLobbyService createLobbyService, JoinLobbyService joinLobbyService) {
+        this.app = app;
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -30,7 +34,8 @@ public class MainMenuPage extends BasePage {
         createLobbyButton.addActionListener(e -> {
             try {
                 UUID lobbyId = createLobbyService.createLobby();
-                joinLobbyService.joinLobby(lobbyId);
+                Socket socket = joinLobbyService.joinLobby(lobbyId);
+                app.showGame(socket);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(MainMenuPage.this, "Failed to create/join lobby: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -50,7 +55,8 @@ public class MainMenuPage extends BasePage {
                 return;
             }
             try {
-                joinLobbyService.joinLobby(lobbyId);
+                Socket socket = joinLobbyService.joinLobby(lobbyId);
+                app.showGame(socket);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(MainMenuPage.this, "Failed to join lobby: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
