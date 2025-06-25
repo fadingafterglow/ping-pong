@@ -10,10 +10,10 @@ import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
 import ua.edu.ukma.cs.security.JwtServices;
-import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
+import ua.edu.ukma.cs.services.IAsymmetricDecryptionService;
 import ua.edu.ukma.cs.services.IGameResultService;
 import ua.edu.ukma.cs.services.IGameService;
-import ua.edu.ukma.cs.services.ISymmetricEncryptionService;
+import ua.edu.ukma.cs.encryption.ISymmetricEncryptionService;
 import ua.edu.ukma.cs.tcp.connection.AsynchronousConnection;
 import ua.edu.ukma.cs.tcp.handlers.ITcpRequestHandler;
 import ua.edu.ukma.cs.tcp.packets.PacketIn;
@@ -39,7 +39,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
 
     private final IGameResultService gameResultService;
     private final JwtServices jwtServices;
-    private final IAsymmetricEncryptionService asymmetricEncryptionService;
+    private final IAsymmetricDecryptionService asymmetricEncryptionService;
     private final ISymmetricEncryptionService symmetricEncryptionService;
 
     private final Cache<UUID, GameLobby> lobbies;
@@ -50,7 +50,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
     private final ExecutorService resultsSaver;
 
     public GameService(IGameResultService gameResultService, JwtServices jwtServices,
-                       IAsymmetricEncryptionService asymmetricEncryptionService, ISymmetricEncryptionService symmetricEncryptionService,
+                       IAsymmetricDecryptionService asymmetricEncryptionService, ISymmetricEncryptionService symmetricEncryptionService,
                        Properties properties)
     {
         this.gameResultService = gameResultService;

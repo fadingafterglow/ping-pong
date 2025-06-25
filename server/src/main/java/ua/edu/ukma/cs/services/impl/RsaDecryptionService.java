@@ -1,7 +1,7 @@
 package ua.edu.ukma.cs.services.impl;
 
 import lombok.SneakyThrows;
-import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
+import ua.edu.ukma.cs.services.IAsymmetricDecryptionService;
 
 import javax.crypto.Cipher;
 import java.security.GeneralSecurityException;
@@ -9,7 +9,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 
-public class RsaEncryptionService implements IAsymmetricEncryptionService {
+public class RsaDecryptionService implements IAsymmetricDecryptionService {
 
     private static final int KEY_SIZE = 2048;
 
@@ -17,7 +17,7 @@ public class RsaEncryptionService implements IAsymmetricEncryptionService {
     private final ThreadLocal<Cipher> cipher;
 
     @SneakyThrows
-    public RsaEncryptionService() {
+    public RsaDecryptionService() {
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(KEY_SIZE);
         this.keyPair = keyPairGenerator.generateKeyPair();

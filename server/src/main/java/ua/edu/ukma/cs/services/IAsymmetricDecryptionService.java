@@ -2,7 +2,7 @@ package ua.edu.ukma.cs.services;
 
 import java.security.GeneralSecurityException;
 
-public interface IAsymmetricEncryptionService {
+public interface IAsymmetricDecryptionService {
 
     byte[] getPublicKey();
 

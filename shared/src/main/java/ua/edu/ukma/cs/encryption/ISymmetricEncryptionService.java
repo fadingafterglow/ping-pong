@@ -1,8 +1,9 @@
-package ua.edu.ukma.cs.services;
+package ua.edu.ukma.cs.encryption;
 
 import ua.edu.ukma.cs.exception.ValidationException;
 
 public interface ISymmetricEncryptionService {
+    byte[] generateKey() throws Exception;
 
     void validateKey(byte[] key) throws ValidationException;
 
