@@ -23,7 +23,6 @@ import ua.edu.ukma.cs.servers.GameServer;
 import ua.edu.ukma.cs.servers.IServer;
 import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
 import ua.edu.ukma.cs.services.IGameResultService;
-import ua.edu.ukma.cs.services.IGameService;
 import ua.edu.ukma.cs.services.ISymmetricEncryptionService;
 import ua.edu.ukma.cs.services.impl.*;
 import ua.edu.ukma.cs.tcp.decoders.IDecoder;
