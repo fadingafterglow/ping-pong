@@ -20,6 +20,7 @@ import ua.edu.ukma.cs.tcp.packets.PacketOut;
 import ua.edu.ukma.cs.tcp.packets.PacketType;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyRequest;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyResponse;
+import ua.edu.ukma.cs.tcp.packets.payload.MoveRacketRequest;
 import ua.edu.ukma.cs.utils.SharedObjectMapper;
 import ua.edu.ukma.cs.validation.Validator;
 
@@ -46,6 +47,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
     private final int startDelay;
     private final int updateInterval;
     private final ScheduledExecutorService gameScheduler;
+    private final int inputBufferSize;
 
     public GameService(JwtServices jwtServices, IAsymmetricEncryptionService asymmetricEncryptionService,
                        ISymmetricEncryptionService symmetricEncryptionService, Properties properties)
@@ -62,12 +64,13 @@ public class GameService implements IGameService, ITcpRequestHandler {
         this.updateInterval = Integer.parseInt(properties.getProperty("game.lobby.updateInterval", "15"));
         int schedulerCoreThreads = Integer.parseInt(properties.getProperty("game.scheduler.coreThreads", "2"));
         this.gameScheduler = Executors.newScheduledThreadPool(schedulerCoreThreads);
+        this.inputBufferSize = Integer.parseInt(properties.getProperty("game.input.bufferSize", "3"));
     }
 
     @Override
     public UUID createLobby(int creatorId) {
         UUID lobbyId = UUID.randomUUID();
-        GameLobby lobby = new GameLobby(lobbyId, creatorId);
+        GameLobby lobby = new GameLobby(lobbyId, creatorId, inputBufferSize);
         lobbies.put(lobbyId, lobby);
         return lobbyId;
     }
@@ -87,6 +90,11 @@ public class GameService implements IGameService, ITcpRequestHandler {
                 }
                 case START_GAME_REQUEST ->
                     handleStartGameRequest(connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.getAttribute(USER_ID_ATTRIBUTE));
+                case MOVE_RACKET_REQUEST -> {
+                    byte[] key = connection.getAttribute(KEY_ATTRIBUTE);
+                    MoveRacketRequest request = extractPayload(packet.getData(), d -> symmetricEncryptionService.decrypt(d, key), MoveRacketRequest.class);
+                    handleMoveRacketRequest(request, connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.getAttribute(USER_ID_ATTRIBUTE));
+                }
             }
         } catch (GeneralSecurityException | IOException | ValidationException ex) {
             sendResponse(connection, PacketType.BAD_PAYLOAD_RESPONSE);
@@ -142,6 +150,12 @@ public class GameService implements IGameService, ITcpRequestHandler {
                 lobby.setUpdater(updater);
             }
         }
+    }
+
+    private void handleMoveRacketRequest(MoveRacketRequest request, UUID lobbyId, int userId) {
+        GameLobby lobby = lobbies.getIfPresent(lobbyId);
+        if (lobby == null) return;
+        lobby.addMove(userId, request.isUp());
     }
 
     private void updateGame(GameLobby lobby) {
