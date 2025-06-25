@@ -3,7 +3,7 @@ package ua.edu.ukma.cs.pages;
 import ua.edu.ukma.cs.services.CreateLobbyService;
 import ua.edu.ukma.cs.services.JoinLobbyService;
 import ua.edu.ukma.cs.app.App;
-import java.net.Socket;
+import ua.edu.ukma.cs.connection.LobbyConnection;
 
 import javax.swing.*;
 import java.awt.*;
@@ -34,8 +34,8 @@ public class MainMenuPage extends BasePage {
         createLobbyButton.addActionListener(e -> {
             try {
                 UUID lobbyId = createLobbyService.createLobby();
-                Socket socket = joinLobbyService.joinLobby(lobbyId);
-                app.showGame(socket);
+                LobbyConnection connection = joinLobbyService.joinLobby(lobbyId);
+                app.showGame(connection);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(MainMenuPage.this, "Failed to create/join lobby: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -55,8 +55,8 @@ public class MainMenuPage extends BasePage {
                 return;
             }
             try {
-                Socket socket = joinLobbyService.joinLobby(lobbyId);
-                app.showGame(socket);
+                LobbyConnection connection = joinLobbyService.joinLobby(lobbyId);
+                app.showGame(connection);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(MainMenuPage.this, "Failed to join lobby: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }

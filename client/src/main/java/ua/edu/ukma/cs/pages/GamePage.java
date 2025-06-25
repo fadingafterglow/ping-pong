@@ -2,37 +2,26 @@ package ua.edu.ukma.cs.pages;
 
 import javax.swing.*;
 import java.awt.*;
-import java.net.Socket;
-import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyResponse;
+
+import ua.edu.ukma.cs.connection.LobbyConnection;
 import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 import ua.edu.ukma.cs.game.configuration.GameConfiguration;
-import ua.edu.ukma.cs.utils.SharedObjectMapper;
-import java.io.InputStream;
 
 public class GamePage extends BasePage {
-    private Socket socket;
+    private LobbyConnection connection;
 
     public GamePage() {
         setLayout(new BorderLayout());
     }
 
-    public void setSocket(Socket socket) {
-        this.socket = socket;
+    public void setConnection(LobbyConnection connection) {
+        this.connection = connection;
     }
 
     @Override
     public void init() {
         try {
-            InputStream in = socket.getInputStream();
-            byte[] buffer = in.readNBytes(4096);
-            JoinLobbyResponse response = SharedObjectMapper.S.readValue(buffer, JoinLobbyResponse.class);
-            if (!response.isSuccess()) {
-                add(new JLabel("Failed to join lobby: " + response.getMessage(), SwingConstants.CENTER), BorderLayout.CENTER);
-                revalidate();
-                repaint();
-                return;
-            }
-            GameLobbySnapshot snapshot = response.getLobby();
+            GameLobbySnapshot snapshot = connection.getLobbyState();
             GameConfiguration config = snapshot.gameConfiguration();
             JPanel field = new JPanel(null);
             field.setPreferredSize(new Dimension(config.fieldWidth(), config.fieldHeight()));

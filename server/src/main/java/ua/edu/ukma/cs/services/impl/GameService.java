@@ -22,7 +22,7 @@ import ua.edu.ukma.cs.tcp.packets.PacketType;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyRequest;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyResponse;
 import ua.edu.ukma.cs.tcp.packets.payload.MoveRacketRequest;
-import ua.edu.ukma.cs.utils.SharedObjectMapper;
+import ua.edu.ukma.cs.utils.ObjectMapperHolder;
 import ua.edu.ukma.cs.validation.Validator;
 
 import java.io.IOException;
@@ -200,12 +200,12 @@ public class GameService implements IGameService, ITcpRequestHandler {
     }
 
     private <T> T extractPayload(byte[] data, Decryptor decryptor, Class<T> type) throws IOException, GeneralSecurityException {
-        return SharedObjectMapper.S.readValue(decryptor.decrypt(data), type);
+        return ObjectMapperHolder.get().readValue(decryptor.decrypt(data), type);
     }
 
     @SneakyThrows
     private <T> byte[] serializePayload(T payload, Encryptor encryptor) {
-        return encryptor.encrypt(SharedObjectMapper.S.writeValueAsBytes(payload));
+        return encryptor.encrypt(ObjectMapperHolder.get().writeValueAsBytes(payload));
     }
 
     @FunctionalInterface

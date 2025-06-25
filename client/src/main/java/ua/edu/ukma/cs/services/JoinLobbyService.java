@@ -1,41 +1,31 @@
 package ua.edu.ukma.cs.services;
 
 import lombok.RequiredArgsConstructor;
-import ua.edu.ukma.cs.app.AppState;
-import ua.edu.ukma.cs.encryption.AesEncryptionService;
-import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyRequest;
 
-import java.net.InetAddress;
 import java.util.UUID;
 
 import lombok.SneakyThrows;
-import ua.edu.ukma.cs.utils.SharedObjectMapper;
-
-import java.io.OutputStream;
-import java.net.Socket;
+import ua.edu.ukma.cs.connection.LobbyConnection;
+import ua.edu.ukma.cs.encryption.ISymmetricEncryptionService;
+import ua.edu.ukma.cs.tcp.decoders.IDecoder;
+import ua.edu.ukma.cs.tcp.encoders.IEncoder;
+import ua.edu.ukma.cs.tcp.packets.PacketIn;
+import ua.edu.ukma.cs.tcp.packets.PacketOut;
 
 @RequiredArgsConstructor
 public class JoinLobbyService {
+
     private final HttpService httpService;
-    private final AesEncryptionService aesEncryptionService;
-    private final RsaEncryptionService rsaEncryptionService;
+    private final IEncoder<PacketOut> encoder;
+    private final IDecoder<PacketIn> decoder;
+    private final ISymmetricEncryptionService symmetricEncryptionService;
+    private final IAsymmetricEncryptionService asymmetricEncryptionService;
 
     @SneakyThrows
-    public Socket joinLobby(UUID lobbyId) {
-        JoinLobbyRequest joinLobbyRequest = formJoinLobbyRequest(lobbyId);
-        Socket socket = new Socket(InetAddress.getLoopbackAddress(), 10101);
-        byte[] requestBytes = SharedObjectMapper.S.writeValueAsBytes(joinLobbyRequest);
-        OutputStream out = socket.getOutputStream();
-        out.write(requestBytes);
-        out.flush();
-        return socket;
-    }
-
-    @SneakyThrows
-    private JoinLobbyRequest formJoinLobbyRequest(UUID lobbyId) {
+    public LobbyConnection joinLobby(UUID lobbyId) {
         byte[] publicKey = httpService.get("/public-key").body();
-        byte[] symmetricKey = aesEncryptionService.generateKey();
-        byte[] encryptedSymmetricKey = rsaEncryptionService.encrypt(symmetricKey, publicKey);
-        return new JoinLobbyRequest(lobbyId, AppState.getJwtToken(), encryptedSymmetricKey);
+        LobbyConnection lobbyConnection = new LobbyConnection(encoder, decoder, asymmetricEncryptionService, symmetricEncryptionService);
+        lobbyConnection.init(lobbyId, publicKey);
+        return lobbyConnection;
     }
 }

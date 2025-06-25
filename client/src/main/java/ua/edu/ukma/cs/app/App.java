@@ -1,20 +1,17 @@
 package ua.edu.ukma.cs.app;
 
+import ua.edu.ukma.cs.connection.LobbyConnection;
 import ua.edu.ukma.cs.pages.GamePage;
 import ua.edu.ukma.cs.pages.LoginPage;
 import ua.edu.ukma.cs.pages.RegisterPage;
 import ua.edu.ukma.cs.pages.MainMenuPage;
-import ua.edu.ukma.cs.services.HttpService;
-import ua.edu.ukma.cs.services.LoginService;
-import ua.edu.ukma.cs.services.RegisterService;
-import ua.edu.ukma.cs.services.CreateLobbyService;
-import ua.edu.ukma.cs.services.JoinLobbyService;
-import ua.edu.ukma.cs.services.RsaEncryptionService;
+import ua.edu.ukma.cs.services.*;
 import ua.edu.ukma.cs.encryption.AesEncryptionService;
+import ua.edu.ukma.cs.tcp.decoders.PacketDecoder;
+import ua.edu.ukma.cs.tcp.encoders.PacketEncoder;
 
 import javax.swing.*;
 import java.awt.*;
-import java.net.Socket;
 
 public class App extends JFrame {
     private final CardLayout cardLayout = new CardLayout();
@@ -40,7 +37,7 @@ public class App extends JFrame {
         mainMenuPage = new MainMenuPage(
             this,
             new CreateLobbyService(httpService),
-            new JoinLobbyService(httpService, new AesEncryptionService(), new RsaEncryptionService())
+            new JoinLobbyService(httpService, new PacketEncoder(), new PacketDecoder(), new AesEncryptionService(), new RsaEncryptionService())
         );
         gamePage = new GamePage();
 
@@ -68,8 +65,8 @@ public class App extends JFrame {
         cardLayout.show(cards, "lobby");
     }
 
-    public void showGame(Socket socket) {
-        gamePage.setSocket(socket);
+    public void showGame(LobbyConnection lobbyConnection) {
+        gamePage.setConnection(lobbyConnection);
         gamePage.init();
         cardLayout.show(cards, "game");
     }

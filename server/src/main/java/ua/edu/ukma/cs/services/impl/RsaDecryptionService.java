@@ -26,7 +26,7 @@ public class RsaDecryptionService implements IAsymmetricDecryptionService {
 
     @SneakyThrows
     private static Cipher createCipher(PrivateKey privateKey) {
-        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
+        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         rsaCipher.init(Cipher.DECRYPT_MODE, privateKey);
         return rsaCipher;
     }

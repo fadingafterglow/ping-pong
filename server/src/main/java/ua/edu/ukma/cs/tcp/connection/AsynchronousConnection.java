@@ -47,7 +47,9 @@ public class AsynchronousConnection {
     }
 
     public void enqueueWrite(PacketOut packet) {
-        writeQueue.offer(encoder.encode(packet));
+        ByteBuffer buffer = encoder.encode(packet);
+        buffer.flip();
+        writeQueue.offer(buffer);
         tryWrite();
     }
 

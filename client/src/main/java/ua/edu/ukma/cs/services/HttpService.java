@@ -2,7 +2,7 @@ package ua.edu.ukma.cs.services;
 
 import lombok.SneakyThrows;
 import ua.edu.ukma.cs.app.AppState;
-import ua.edu.ukma.cs.utils.SharedObjectMapper;
+import ua.edu.ukma.cs.utils.ObjectMapperHolder;
 
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -33,7 +33,7 @@ public class HttpService {
 
     @SneakyThrows
     public HttpResponse<byte[]> post(String path, Object body) {
-        String jsonBody = SharedObjectMapper.S.writeValueAsString(body);
+        String jsonBody = ObjectMapperHolder.get().writeValueAsString(body);
         return post(path, Optional.of(jsonBody));
     }
 

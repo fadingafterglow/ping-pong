@@ -5,8 +5,10 @@ import lombok.*;
 import java.util.UUID;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class JoinLobbyRequest {
-    private final UUID gameLobbyId;
-    private final String userJwt;
-    private final byte[] symmetricKey;
+    private UUID gameLobbyId;
+    private String userJwt;
+    private byte[] symmetricKey;
 }

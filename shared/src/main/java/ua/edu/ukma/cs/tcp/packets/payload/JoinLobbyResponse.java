@@ -1,9 +1,13 @@
 package ua.edu.ukma.cs.tcp.packets.payload;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class JoinLobbyResponse {
 
     private boolean success;

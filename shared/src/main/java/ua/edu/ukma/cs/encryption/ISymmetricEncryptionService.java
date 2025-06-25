@@ -3,7 +3,8 @@ package ua.edu.ukma.cs.encryption;
 import ua.edu.ukma.cs.exception.ValidationException;
 
 public interface ISymmetricEncryptionService {
-    byte[] generateKey() throws Exception;
+
+    byte[] generateKey();
 
     void validateKey(byte[] key) throws ValidationException;
 
