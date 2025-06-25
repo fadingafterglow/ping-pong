@@ -42,7 +42,7 @@ public class GameResultFilter extends BaseFilter {
         return new ConditionsBuilder()
                 .expression(userId, fieldExpressionMap.get("userId"))
                 .min(minThisUserScore, fieldExpressionMap.get("thisUserScore"))
-                .min(maxThisUserScore, fieldExpressionMap.get("thisUserScore"))
+                .max(maxThisUserScore, fieldExpressionMap.get("thisUserScore"))
                 .min(minOtherUserScore, fieldExpressionMap.get("otherUserScore"))
                 .max(maxOtherUserScore, fieldExpressionMap.get("otherUserScore"))
                 .min(minTimeFinished, fieldExpressionMap.get("timeFinished"))

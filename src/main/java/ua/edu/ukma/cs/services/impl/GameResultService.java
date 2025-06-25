@@ -8,10 +8,13 @@ import ua.edu.ukma.cs.entity.GameResultEntity;
 import ua.edu.ukma.cs.exception.ForbiddenException;
 import ua.edu.ukma.cs.exception.NotFoundException;
 import ua.edu.ukma.cs.filter.GameResultFilter;
+import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
+import ua.edu.ukma.cs.game.state.GameStateSnapshot;
 import ua.edu.ukma.cs.mapping.GameResultMapper;
 import ua.edu.ukma.cs.repository.GameResultRepository;
 import ua.edu.ukma.cs.security.SecurityContext;
 import ua.edu.ukma.cs.services.IGameResultService;
+import ua.edu.ukma.cs.utils.TimeUtils;
 
 import java.util.List;
 
@@ -29,9 +32,17 @@ public class GameResultService implements IGameResultService {
         this.mapper = new GameResultMapper();
     }
 
-    private int createGameResult(GameResultEntity entity) {
-        return transactionDelegate.runInTransaction(() -> {
-            return repository.create(entity);
+    @Override
+    public void saveGameResult(GameLobbySnapshot gameLobby, GameStateSnapshot gameState) {
+        transactionDelegate.runInTransaction(() -> {
+            GameResultEntity entity = GameResultEntity.builder()
+                    .creatorScore(gameState.player1Score())
+                    .otherScore(gameState.player2Score())
+                    .timeFinished(TimeUtils.getCurrentDateTimeUTC())
+                    .creatorId(gameLobby.creatorId())
+                    .otherUserId(gameLobby.otherPlayerId())
+                    .build();
+            repository.create(entity);
         });
     }
 
