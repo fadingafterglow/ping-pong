@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.filter;
+package ua.edu.ukma.cs.filter.base;
 
 import lombok.Getter;
 
@@ -9,6 +9,18 @@ import java.util.List;
 public class ConditionsBuilder {
 
     private final List<String> conditions = new ArrayList<>();
+
+    public ConditionsBuilder expression(Object value, String expression) {
+        if(value == null) return this;
+        conditions.add(expression);
+        return this;
+    }
+
+    public ConditionsBuilder equals(Object value, String expression) {
+        if(value == null) return this;
+        conditions.add(String.format("%s = ?", expression));
+        return this;
+    }
 
     public ConditionsBuilder like(String value, String expression) {
         if (value == null || value.isBlank()) return this;

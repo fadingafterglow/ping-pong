@@ -11,6 +11,7 @@ import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
+import ua.edu.ukma.cs.services.IGameResultService;
 import ua.edu.ukma.cs.services.IGameService;
 import ua.edu.ukma.cs.services.ISymmetricEncryptionService;
 import ua.edu.ukma.cs.tcp.connection.AsynchronousConnection;
@@ -28,10 +29,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class GameService implements IGameService, ITcpRequestHandler {
 
@@ -39,6 +37,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
     private static final String USER_ID_ATTRIBUTE = "userId";
     private static final String LOBBY_ID_ATTRIBUTE = "lobbyId";
 
+    private final IGameResultService gameResultService;
     private final JwtServices jwtServices;
     private final IAsymmetricEncryptionService asymmetricEncryptionService;
     private final ISymmetricEncryptionService symmetricEncryptionService;
@@ -48,10 +47,13 @@ public class GameService implements IGameService, ITcpRequestHandler {
     private final int updateInterval;
     private final ScheduledExecutorService gameScheduler;
     private final int inputBufferSize;
+    private final ExecutorService resultsSaver;
 
-    public GameService(JwtServices jwtServices, IAsymmetricEncryptionService asymmetricEncryptionService,
-                       ISymmetricEncryptionService symmetricEncryptionService, Properties properties)
+    public GameService(IGameResultService gameResultService, JwtServices jwtServices,
+                       IAsymmetricEncryptionService asymmetricEncryptionService, ISymmetricEncryptionService symmetricEncryptionService,
+                       Properties properties)
     {
+        this.gameResultService = gameResultService;
         this.jwtServices = jwtServices;
         this.asymmetricEncryptionService = asymmetricEncryptionService;
         this.symmetricEncryptionService = symmetricEncryptionService;
@@ -65,6 +67,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
         int schedulerCoreThreads = Integer.parseInt(properties.getProperty("game.scheduler.coreThreads", "2"));
         this.gameScheduler = Executors.newScheduledThreadPool(schedulerCoreThreads);
         this.inputBufferSize = Integer.parseInt(properties.getProperty("game.input.bufferSize", "3"));
+        this.resultsSaver = Executors.newCachedThreadPool();
     }
 
     @Override
@@ -170,6 +173,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
             GameLobbySnapshot lobbySnapshot = lobby.takeLobbySnapshot();
             sendGameLobbyStateUpdate(connection, lobbySnapshot);
             sendGameLobbyStateUpdate(otherConnection, lobbySnapshot);
+            resultsSaver.submit(() -> gameResultService.saveGameResult(lobbySnapshot, gameSnapshot));
         }
     }
 

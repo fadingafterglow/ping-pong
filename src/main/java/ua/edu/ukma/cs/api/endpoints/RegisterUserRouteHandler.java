@@ -13,6 +13,6 @@ public class RegisterUserRouteHandler extends BaseRouteHandler {
 
     @Override
     public RouteHandlerResult handle() throws Exception {
-        return ok(userService.register(requestDto));
+        return RouteHandlerResult.json(userService.register(requestDto));
     }
 }

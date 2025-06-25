@@ -41,6 +41,9 @@ public class Router implements HttpHandler {
             BaseRouteHandler routeHandler = route.getRouteHandlerFactory().create(routeContext);
             RouteHandlerResult handlerResult = routeHandler.handle();
 
+            handlerResult.contentType().ifPresent(value -> {
+                exchange.getResponseHeaders().add("Content-Type", value);
+            });
             exchange.sendResponseHeaders(handlerResult.statusCode(), handlerResult.body().length);
             exchange.getResponseBody().write(handlerResult.body());
         } catch (NoRouteMatchedException e) {

@@ -3,6 +3,8 @@ package ua.edu.ukma.cs;
 import com.sun.net.httpserver.Filter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import ua.edu.ukma.cs.api.endpoints.GetCurrentUserGameResultsRouteHandler;
+import ua.edu.ukma.cs.api.endpoints.GetGameResultByIdRouteHandler;
 import ua.edu.ukma.cs.api.endpoints.LoginUserRouteHandler;
 import ua.edu.ukma.cs.api.endpoints.RegisterUserRouteHandler;
 import ua.edu.ukma.cs.api.filters.ExceptionHandlerFilter;
@@ -13,10 +15,13 @@ import ua.edu.ukma.cs.database.context.PersistenceContext;
 import ua.edu.ukma.cs.database.migration.DefaultMigrationRunner;
 import ua.edu.ukma.cs.api.request.LoginUserRequestDto;
 import ua.edu.ukma.cs.api.request.RegisterUserRequestDto;
+import ua.edu.ukma.cs.repository.GameResultRepository;
 import ua.edu.ukma.cs.repository.UserRepository;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.servers.ApiServer;
 import ua.edu.ukma.cs.servers.IServer;
+import ua.edu.ukma.cs.services.IGameResultService;
+import ua.edu.ukma.cs.services.impl.GameResultService;
 import ua.edu.ukma.cs.services.impl.UserService;
 
 import java.io.IOException;
@@ -37,14 +42,18 @@ public class PingPongGame {
         new DefaultMigrationRunner().runMigrations();
 
         JwtServices jwtServices = new JwtServices(properties);
+
         UserRepository userRepository = new UserRepository();
         UserService userService = new UserService(userRepository, jwtServices);
 
-        IServer apiServer = new ApiServer(buildRouter(userService), buildFilters(jwtServices), properties);
+        GameResultRepository gameResultRepository = new GameResultRepository();
+        IGameResultService gameResultService = new GameResultService(gameResultRepository);
+
+        IServer apiServer = new ApiServer(buildRouter(userService, gameResultService), buildFilters(jwtServices), properties);
         apiServer.start();
     }
 
-    private static Router buildRouter(UserService userService) {
+    private static Router buildRouter(UserService userService, IGameResultService gameResultService) {
         Router router = new Router();
 
         router.addRoute("/register", HttpMethod.POST, routeContext -> {
@@ -55,6 +64,15 @@ public class PingPongGame {
         router.addRoute("/login", HttpMethod.POST, routeContext -> {
             LoginUserRequestDto loginUserRequest = routeContext.getJsonFromBody(LoginUserRequestDto.class);
             return new LoginUserRouteHandler(userService, loginUserRequest);
+        });
+
+        router.addRoute("/game-result", HttpMethod.GET, routeContext -> {
+            return new GetCurrentUserGameResultsRouteHandler(gameResultService, routeContext);
+        });
+
+        router.addRoute("/game-result/(?<id>\\d+)", HttpMethod.GET, routeContext -> {
+            int id = routeContext.getIntFromRouteParam("id");
+            return new GetGameResultByIdRouteHandler(id, gameResultService, routeContext);
         });
 
         return router;

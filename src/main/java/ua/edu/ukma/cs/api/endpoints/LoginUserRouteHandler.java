@@ -13,6 +13,6 @@ public class LoginUserRouteHandler extends BaseRouteHandler {
 
     @Override
     public RouteHandlerResult handle() throws Exception {
-        return ok(userService.login(loginUserRequestDto));
+        return RouteHandlerResult.string(userService.login(loginUserRequestDto));
     }
 }

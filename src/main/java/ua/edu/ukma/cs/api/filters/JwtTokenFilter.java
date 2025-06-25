@@ -1,5 +1,6 @@
 package ua.edu.ukma.cs.api.filters;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,13 @@ public class JwtTokenFilter extends Filter {
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
         String token = exchange.getRequestHeaders().getFirst("Authentication");
         if (token != null) {
-            SecurityContext securityContext = jwtServices.verifyToken(token);
-            exchange.setAttribute(SECURITY_CONTEXT_KEY, securityContext);
+            try {
+                SecurityContext securityContext = jwtServices.verifyToken(token);
+                exchange.setAttribute(SECURITY_CONTEXT_KEY, securityContext);
+            } catch (JWTVerificationException e) {
+                exchange.sendResponseHeaders(403, 0);
+                exchange.close();
+            }
         }
         chain.doFilter(exchange);
     }

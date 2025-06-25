@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.filter;
+package ua.edu.ukma.cs.filter.base;
 
 import lombok.experimental.SuperBuilder;
 
