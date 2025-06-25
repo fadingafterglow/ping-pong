@@ -1,18 +1,22 @@
 package ua.edu.ukma.cs.api.endpoints;
 
-import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.api.routing.BaseRouteHandler;
+import ua.edu.ukma.cs.api.routing.RouteContext;
 import ua.edu.ukma.cs.api.routing.RouteHandlerResult;
 import ua.edu.ukma.cs.api.request.LoginUserRequestDto;
 import ua.edu.ukma.cs.services.impl.UserService;
 
-@RequiredArgsConstructor
 public class LoginUserRouteHandler extends BaseRouteHandler {
     private final UserService userService;
-    private final LoginUserRequestDto loginUserRequestDto;
+
+    public LoginUserRouteHandler(RouteContext routeContext, UserService userService) {
+        super(routeContext);
+        this.userService = userService;
+    }
 
     @Override
     public RouteHandlerResult handle() throws Exception {
-        return RouteHandlerResult.string(userService.login(loginUserRequestDto));
+        LoginUserRequestDto dto = routeContext.getJsonFromBody(LoginUserRequestDto.class);
+        return RouteHandlerResult.string(userService.login(dto));
     }
 }

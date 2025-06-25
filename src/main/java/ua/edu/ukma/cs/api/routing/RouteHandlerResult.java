@@ -18,4 +18,8 @@ public record RouteHandlerResult(int statusCode, byte[] body, Optional<String> c
     public static RouteHandlerResult string(String str) {
         return new RouteHandlerResult(200, str.getBytes(StandardCharsets.UTF_8), Optional.of("text/plain"));
     }
+
+    public static RouteHandlerResult bytes(byte[] bytes) {
+        return new RouteHandlerResult(200, bytes, Optional.of("application/octet-stream"));
+    }
 }
