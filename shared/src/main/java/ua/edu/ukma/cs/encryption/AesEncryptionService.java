@@ -22,7 +22,8 @@ public class AesEncryptionService implements ISymmetricEncryptionService {
         return Cipher.getInstance("AES/ECB/PKCS5Padding");
     }
 
-    public byte[] generateKey() throws Exception {
+    @SneakyThrows
+    public byte[] generateKey() {
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(128);
         SecretKey secretKey = keyGen.generateKey();

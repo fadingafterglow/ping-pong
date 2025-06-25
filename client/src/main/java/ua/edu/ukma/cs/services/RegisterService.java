@@ -10,7 +10,7 @@ public class RegisterService {
     }
 
     public void register(RegisterUserRequestDto dto) throws Exception {
-        var response = httpService.postJsonFullResponse("/register", dto);
+        var response = httpService.post("/register", dto);
         if (response.statusCode() != 200) {
             throw new RuntimeException("Registration failed: HTTP " + response.statusCode());
         }
