@@ -92,7 +92,7 @@ class RouteTest {
     }
 
     private static IRouteHandlerFactory mockRouteHandlerFactory() {
-        return routeContext -> new BaseRouteHandler() {
+        return routeContext -> new BaseRouteHandler(routeContext) {
             @Override
             public RouteHandlerResult handle() {
                 throw new RuntimeException("Not implemented");

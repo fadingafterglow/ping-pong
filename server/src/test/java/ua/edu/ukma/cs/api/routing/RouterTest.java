@@ -34,7 +34,7 @@ class RouterTest {
         String msg = "Hello";
         byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
 
-        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler() {
+        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler(context) {
             @Override
             public RouteHandlerResult handle() {
                 return new RouteHandlerResult(200, msgBytes);
@@ -55,7 +55,7 @@ class RouterTest {
         String msg = "Hello";
         byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
 
-        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler() {
+        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler(context) {
             @Override
             public RouteHandlerResult handle() {
                 return new RouteHandlerResult(200, msgBytes);
@@ -75,7 +75,7 @@ class RouterTest {
 
         when(exchange.getRequestBody()).thenReturn(new ByteArrayInputStream("{}".getBytes()));
 
-        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler() {
+        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler(context) {
             @Override
             public RouteHandlerResult handle() throws Exception {
                 throw new RequestParsingErrorException();
@@ -95,7 +95,7 @@ class RouterTest {
 
         when(exchange.getRequestBody()).thenReturn(new ByteArrayInputStream("{}".getBytes()));
 
-        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler() {
+        router.addRoute("/hello", HttpMethod.GET, context -> new BaseRouteHandler(context) {
             @Override
             public RouteHandlerResult handle() {
                 throw new RuntimeException("Boom");
