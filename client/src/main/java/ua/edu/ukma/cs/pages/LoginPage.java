@@ -54,6 +54,7 @@ public class LoginPage extends BasePage {
 
             AppState.setJwtToken(token);
             JOptionPane.showMessageDialog(this, "Login successful.");
+            app.showLobby();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }

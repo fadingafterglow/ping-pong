@@ -1,8 +1,8 @@
 package ua.edu.ukma.cs.app;
 
-import ua.edu.ukma.cs.pages.BasePage;
 import ua.edu.ukma.cs.pages.LoginPage;
 import ua.edu.ukma.cs.pages.RegisterPage;
+import ua.edu.ukma.cs.pages.CreateLobbyPage;
 import ua.edu.ukma.cs.services.HttpService;
 import ua.edu.ukma.cs.services.LoginService;
 import ua.edu.ukma.cs.services.RegisterService;
@@ -20,6 +20,7 @@ public class App extends JFrame {
 
     private final RegisterPage registerPage;
     private final LoginPage loginPage;
+    private final CreateLobbyPage createLobbyPage;
 
     public App() {
         setTitle("Game App");
@@ -29,10 +30,11 @@ public class App extends JFrame {
 
         registerPage = new RegisterPage(this, registerService);
         loginPage = new LoginPage(this, loginService);
+        createLobbyPage = new CreateLobbyPage();
 
         cards.add(registerPage, "register");
         cards.add(loginPage, "login");
-        cards.add(new JLabel("Create Lobby Page (TODO)", SwingConstants.CENTER), "lobby");
+        cards.add(createLobbyPage, "lobby");
 
         add(cards);
         showLogin();
@@ -49,6 +51,7 @@ public class App extends JFrame {
     }
 
     public void showLobby() {
+        createLobbyPage.init();
         cardLayout.show(cards, "lobby");
     }
 
