@@ -23,6 +23,7 @@
     <modules>
         <module>server</module>
         <module>shared</module>
+        <module>client</module>
     </modules>
 
     <dependencyManagement>
