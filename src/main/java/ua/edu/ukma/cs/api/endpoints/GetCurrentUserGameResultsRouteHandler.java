@@ -1,6 +1,5 @@
 package ua.edu.ukma.cs.api.endpoints;
 
-import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.api.request.GameResultFilterDto;
 import ua.edu.ukma.cs.api.routing.BaseRouteHandler;
 import ua.edu.ukma.cs.api.routing.RouteContext;
@@ -9,10 +8,13 @@ import ua.edu.ukma.cs.exception.ForbiddenException;
 import ua.edu.ukma.cs.security.SecurityContext;
 import ua.edu.ukma.cs.services.IGameResultService;
 
-@RequiredArgsConstructor
 public class GetCurrentUserGameResultsRouteHandler extends BaseRouteHandler {
     private final IGameResultService gameResultService;
-    private final RouteContext routeContext;
+
+    public GetCurrentUserGameResultsRouteHandler(RouteContext routeContext, IGameResultService gameResultService) {
+        super(routeContext);
+        this.gameResultService = gameResultService;
+    }
 
     @Override
     public RouteHandlerResult handle() throws Exception {
