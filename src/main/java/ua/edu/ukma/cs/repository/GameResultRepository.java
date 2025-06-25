@@ -14,7 +14,8 @@ import java.util.Optional;
 public class GameResultRepository extends BaseRepository<GameResultEntity> {
     private static final Map<String, String> FIELD_EXPRESSION_MAP = Map.of(
             "id", "id",
-            "score", "score",
+            "thisUserScore", "(CASE WHEN creator_id = ? THEN creator_score ELSE other_score END)",
+            "otherUserScore", "(CASE WHEN creator_id = ? THEN other_score ELSE creator_score END)",
             "timeFinished", "time_finished",
             "creatorId", "creator_id",
             "otherUserId", "other_user_id",
@@ -22,12 +23,13 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     );
 
     public int create(GameResultEntity entity) {
-        String sql = "INSERT INTO game_results (score, time_finished, creator_id, other_user_id) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO game_results (creator_score, other_score, time_finished, creator_id, other_user_id) VALUES (?, ?, ?, ?, ?)";
         return withStatementInCurrentTransaction(sql, true, statement -> {
-            statement.setInt(1, entity.getScore());
-            statement.setTimestamp(2, TimeUtils.mapToSqlTimestamp(entity.getTimeFinished()));
-            statement.setInt(3, entity.getCreatorId());
-            statement.setInt(4, entity.getOtherUserId());
+            statement.setInt(1, entity.getCreatorScore());
+            statement.setInt(2, entity.getOtherScore());
+            statement.setTimestamp(3, TimeUtils.mapToSqlTimestamp(entity.getTimeFinished()));
+            statement.setInt(4, entity.getCreatorId());
+            statement.setInt(5, entity.getOtherUserId());
 
             statement.executeUpdate();
 
@@ -56,7 +58,8 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     protected GameResultEntity readEntityFromResultSet(ResultSet resultSet) throws SQLException {
         return GameResultEntity.builder()
                 .id(resultSet.getInt("id"))
-                .score(resultSet.getInt("score"))
+                .creatorScore(resultSet.getInt("creator_score"))
+                .otherScore(resultSet.getInt("other_score"))
                 .timeFinished(TimeUtils.mapToLocalDateTime(resultSet.getTimestamp("time_finished")))
                 .creatorId(resultSet.getInt("creator_id"))
                 .otherUserId(resultSet.getInt("other_user_id"))

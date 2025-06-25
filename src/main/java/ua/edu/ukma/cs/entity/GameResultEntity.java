@@ -12,8 +12,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class GameResultEntity {
-    private int id;
-    private int score;
+    private Integer id;
+    private int creatorScore;
+    private int otherScore;
     private LocalDateTime timeFinished;
     private int creatorId;
     private int otherUserId;

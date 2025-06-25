@@ -16,7 +16,7 @@ public class ConditionsBuilder {
         return this;
     }
 
-    public ConditionsBuilder exactEquals(Object value, String expression) {
+    public ConditionsBuilder equals(Object value, String expression) {
         if(value == null) return this;
         conditions.add(String.format("%s = ?", expression));
         return this;

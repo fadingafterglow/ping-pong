@@ -13,7 +13,8 @@ import java.time.LocalDateTime;
 @Builder
 public class GameResultResponse {
     private int id;
-    private int score;
+    private int creatorScore;
+    private int otherScore;
     private LocalDateTime timeFinished;
     private int creatorId;
     private int otherUserId;

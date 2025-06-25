@@ -17,8 +17,8 @@ public class UserExactEqualityFilter extends BaseFilter {
     @Override
     protected List<String> formWhereConditions(Map<String, String> fieldExpressionMap) {
         return new ConditionsBuilder()
-                .exactEquals(id, fieldExpressionMap.get("id"))
-                .exactEquals(username, fieldExpressionMap.get("username"))
+                .equals(id, fieldExpressionMap.get("id"))
+                .equals(username, fieldExpressionMap.get("username"))
                 .getConditions();
     }
 
