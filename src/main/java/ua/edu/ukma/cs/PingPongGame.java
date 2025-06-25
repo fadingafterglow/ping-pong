@@ -19,10 +19,18 @@ import ua.edu.ukma.cs.repository.GameResultRepository;
 import ua.edu.ukma.cs.repository.UserRepository;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.servers.ApiServer;
+import ua.edu.ukma.cs.servers.GameServer;
 import ua.edu.ukma.cs.servers.IServer;
+import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
 import ua.edu.ukma.cs.services.IGameResultService;
-import ua.edu.ukma.cs.services.impl.GameResultService;
-import ua.edu.ukma.cs.services.impl.UserService;
+import ua.edu.ukma.cs.services.ISymmetricEncryptionService;
+import ua.edu.ukma.cs.services.impl.*;
+import ua.edu.ukma.cs.tcp.decoders.IDecoder;
+import ua.edu.ukma.cs.tcp.decoders.PacketDecoder;
+import ua.edu.ukma.cs.tcp.encoders.IEncoder;
+import ua.edu.ukma.cs.tcp.encoders.PacketEncoder;
+import ua.edu.ukma.cs.tcp.packets.PacketIn;
+import ua.edu.ukma.cs.tcp.packets.PacketOut;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,7 +58,17 @@ public class PingPongGame {
         IGameResultService gameResultService = new GameResultService(gameResultRepository);
 
         IServer apiServer = new ApiServer(buildRouter(userService, gameResultService), buildFilters(jwtServices), properties);
+
+        IAsymmetricEncryptionService asymmetricEncryptionService = new RsaEncryptionService();
+        ISymmetricEncryptionService symmetricEncryptionService = new AesEncryptionService();
+        GameService gameService = new GameService(gameResultService, jwtServices, asymmetricEncryptionService, symmetricEncryptionService, properties);
+
+        IEncoder<PacketOut> encoder = new PacketEncoder();
+        IDecoder<PacketIn> decoder = new PacketDecoder();
+        IServer gameServer = new GameServer(decoder, encoder, gameService, properties);
+
         apiServer.start();
+        gameServer.start();
     }
 
     private static Router buildRouter(UserService userService, IGameResultService gameResultService) {
