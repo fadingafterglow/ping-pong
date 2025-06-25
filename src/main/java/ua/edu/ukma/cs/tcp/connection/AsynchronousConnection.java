@@ -2,10 +2,13 @@ package ua.edu.ukma.cs.tcp.connection;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import ua.edu.ukma.cs.tcp.encoders.IEncoder;
+import ua.edu.ukma.cs.tcp.packets.PacketOut;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -13,18 +16,38 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AsynchronousConnection {
 
     private final AsynchronousSocketChannel socket;
+    private final IEncoder<PacketOut> encoder;
 
     private final AtomicBoolean isWriting;
     private final ConcurrentLinkedQueue<ByteBuffer> writeQueue;
+    private final ConcurrentHashMap<String, Object> attributes;
 
-    public AsynchronousConnection(AsynchronousSocketChannel socket) {
+    public AsynchronousConnection(AsynchronousSocketChannel socket, IEncoder<PacketOut> encoder) {
         this.socket = socket;
+        this.encoder = encoder;
         this.isWriting = new AtomicBoolean();
         this.writeQueue = new ConcurrentLinkedQueue<>();
+        this.attributes = new ConcurrentHashMap<>();
     }
 
-    public void enqueueWrite(ByteBuffer buffer) {
-        writeQueue.offer(buffer);
+    public boolean isClosed() {
+        return !socket.isOpen();
+    }
+
+    public void setAttribute(String name, Object value) {
+        if (value == null)
+            attributes.remove(name);
+        else
+            attributes.put(name, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getAttribute(String name) {
+        return (T) attributes.get(name);
+    }
+
+    public void enqueueWrite(PacketOut packet) {
+        writeQueue.offer(encoder.encode(packet));
         tryWrite();
     }
 

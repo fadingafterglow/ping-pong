@@ -6,5 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class SecurityContext {
+    private int userId;
     private String username;
 }

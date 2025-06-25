@@ -1,4 +1,4 @@
-package ua.edu.ukma.cs.enums;
+package ua.edu.ukma.cs.tcp.packets;
 
 import lombok.Getter;
 
@@ -8,9 +8,11 @@ public enum PacketType {
     START_GAME_REQUEST((byte) -2),
     MOVE_RACKET_REQUEST((byte) -3),
 
-    JOIN_LOBBY_RESPONSE((byte) 1),
-    LOBBY_STATE_UPDATE((byte) 2),
-    GAME_STATE_UPDATE((byte) 3);
+    BAD_PAYLOAD_RESPONSE((byte) 1),
+    JOIN_LOBBY_RESPONSE((byte) 2),
+
+    GAME_LOBBY_STATE_UPDATE((byte) 51),
+    GAME_STATE_UPDATE((byte) 52);
 
     private final byte code;
 
