@@ -5,20 +5,20 @@ import ua.edu.ukma.cs.api.routing.RouteContext;
 import ua.edu.ukma.cs.api.routing.RouteHandlerResult;
 import ua.edu.ukma.cs.exception.ForbiddenException;
 import ua.edu.ukma.cs.security.SecurityContext;
-import ua.edu.ukma.cs.services.IGameResultService;
+import ua.edu.ukma.cs.services.IGameService;
 
-public class GetGameResultByIdRouteHandler extends BaseRouteHandler {
-    private final IGameResultService gameResultService;
+public class CreateLobbyRouteHandler extends BaseRouteHandler {
+    private final IGameService gameService;
 
-    public GetGameResultByIdRouteHandler(RouteContext routeContext, IGameResultService gameResultService) {
+    public CreateLobbyRouteHandler(RouteContext routeContext, IGameService gameService) {
         super(routeContext);
-        this.gameResultService = gameResultService;
+        this.gameService = gameService;
     }
 
     @Override
     public RouteHandlerResult handle() throws Exception {
-        int id = routeContext.getIntFromRouteParam("id");
         SecurityContext securityContext = routeContext.getSecurityContext().orElseThrow(ForbiddenException::new);
-        return RouteHandlerResult.json(gameResultService.getById(id, securityContext));
+        int userId = securityContext.getUserId();
+        return RouteHandlerResult.string(gameService.createLobby(userId).toString());
     }
 }
