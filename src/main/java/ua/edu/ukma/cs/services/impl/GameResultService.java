@@ -1,6 +1,7 @@
 package ua.edu.ukma.cs.services.impl;
 
 import ua.edu.ukma.cs.api.request.GameResultFilterDto;
+import ua.edu.ukma.cs.api.response.GameResultListResponse;
 import ua.edu.ukma.cs.api.response.GameResultResponse;
 import ua.edu.ukma.cs.database.transaction.TransactionDelegate;
 import ua.edu.ukma.cs.entity.GameResultEntity;
@@ -47,14 +48,13 @@ public class GameResultService implements IGameResultService {
     }
 
     @Override
-    public List<GameResultResponse> getCurrentUserGameResults(SecurityContext securityContext, GameResultFilterDto filterDto) {
+    public GameResultListResponse getCurrentUserGameResults(SecurityContext securityContext, GameResultFilterDto filterDto) {
         return readOnlyTransactionDelegate.runInTransaction(() -> {
             int currentUserId = securityContext.getUserId();
             GameResultFilter filter = GameResultFilter.fromDto(filterDto, currentUserId);
-            return repository.getAllByFilter(filter)
-                    .stream()
-                    .map(mapper::toResponse)
-                    .toList();
+            List<GameResultEntity> results = repository.getAllByFilter(filter);
+            long total = repository.countByFilter(filter);
+            return mapper.toListResponse(total, results);
         });
     }
 }

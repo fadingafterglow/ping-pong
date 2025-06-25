@@ -39,7 +39,7 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
 
     public Optional<GameResultEntity> getById(int id) {
         String sql = "SELECT * FROM game_results WHERE id = ?";
-        return withStatementInCurrentTransaction(sql, false, statement -> {
+        return withStatementInCurrentTransaction(sql, statement -> {
            statement.setInt(1, id);
            return queryOne(statement);
         });
@@ -48,9 +48,18 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     public List<GameResultEntity> getAllByFilter(GameResultFilter filter) {
         String sql = "SELECT * FROM game_results";
         sql = filter.addFilteringAndPagination(sql, FIELD_EXPRESSION_MAP);
-        return withStatementInCurrentTransaction(sql, false, statement -> {
+        return withStatementInCurrentTransaction(sql, statement -> {
             filter.setParameters(statement);
             return queryAll(statement);
+        });
+    }
+
+    public long countByFilter(GameResultFilter filter) {
+        String sql = "SELECT COUNT(*) FROM game_results";
+        sql = filter.addFiltering(sql, FIELD_EXPRESSION_MAP);
+        return withStatementInCurrentTransaction(sql, statement -> {
+            filter.setParameters(statement);
+            return queryCount(statement);
         });
     }
 

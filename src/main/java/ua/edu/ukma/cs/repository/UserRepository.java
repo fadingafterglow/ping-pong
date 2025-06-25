@@ -39,7 +39,7 @@ public class UserRepository extends BaseRepository<UserEntity> {
     private Optional<UserEntity> findByExactFilter(UserExactEqualityFilter filter) {
         String sql = "SELECT * FROM users";
         sql = filter.addFiltering(sql, FIELD_EXPRESSION_MAP);
-        return withStatementInCurrentTransaction(sql, false, statement -> {
+        return withStatementInCurrentTransaction(sql, statement -> {
             filter.setParameters(statement);
             return queryOne(statement);
         });

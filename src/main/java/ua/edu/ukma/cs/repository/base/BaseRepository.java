@@ -19,6 +19,10 @@ public abstract class BaseRepository<TEntity> {
         this.transactionManager = PersistenceContext.getInstance().getTransactionManager();
     }
 
+    protected <R> R withStatementInCurrentTransaction(String sql, SqlExceptionThrowingFunction<PreparedStatement, R> function) {
+        return withStatementInCurrentTransaction(sql, false, function);
+    }
+
     protected <R> R withStatementInCurrentTransaction(String sql, boolean returnGeneratedKeys, SqlExceptionThrowingFunction<PreparedStatement, R> function) {
         return withSqlExceptionHandling(() -> {
             try (PreparedStatement statement = transactionManager.currentTransaction().prepareStatement(sql, returnGeneratedKeys)) {
@@ -60,6 +64,14 @@ public abstract class BaseRepository<TEntity> {
                 entities.add(readEntityFromResultSet(resultSet));
             }
             return entities;
+        }
+    }
+
+    protected long queryCount(PreparedStatement statement) throws SQLException {
+        try (ResultSet resultSet = statement.executeQuery()) {
+            if (resultSet.next())
+                return resultSet.getLong(1);
+            return 0;
         }
     }
 
