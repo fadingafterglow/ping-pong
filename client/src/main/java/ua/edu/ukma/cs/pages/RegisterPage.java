@@ -1,8 +1,9 @@
 package ua.edu.ukma.cs.pages;
 
-import ua.edu.ukma.cs.app.App;
+import ua.edu.ukma.cs.app.PingPongClient;
 import ua.edu.ukma.cs.api.request.RegisterUserRequestDto;
 import ua.edu.ukma.cs.services.RegisterService;
+import ua.edu.ukma.cs.utils.DialogUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,13 +11,13 @@ import java.awt.event.ActionEvent;
 
 public class RegisterPage extends BasePage {
 
-    private final App app;
-    private final JTextField usernameField;
-
-    private final JPasswordField passwordField;
+    private final PingPongClient app;
     private final RegisterService registerService;
 
-    public RegisterPage(App app, RegisterService registerService) {
+    private final JTextField usernameField;
+    private final JPasswordField passwordField;
+
+    public RegisterPage(PingPongClient app, RegisterService registerService) {
         this.app = app;
         this.registerService = registerService;
 
@@ -64,10 +65,10 @@ public class RegisterPage extends BasePage {
                             .build()
             );
 
-            JOptionPane.showMessageDialog(this, "Registration successful! Please log in.");
+            DialogUtils.successDialog(this, "Registration successful! Please log in.");
             app.showLogin();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            DialogUtils.errorDialog(this, "Cannot register.");
         }
     }
 

@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Properties;
 
 @Slf4j
-public class PingPongGame {
+public class PingPongServer {
 
     private static final String PROPERTIES_FILE = "/application.properties";
 

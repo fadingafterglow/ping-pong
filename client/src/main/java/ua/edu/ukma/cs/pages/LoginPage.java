@@ -1,9 +1,10 @@
 package ua.edu.ukma.cs.pages;
 
-import ua.edu.ukma.cs.app.App;
+import ua.edu.ukma.cs.app.PingPongClient;
 import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.api.request.LoginUserRequestDto;
 import ua.edu.ukma.cs.services.LoginService;
+import ua.edu.ukma.cs.utils.DialogUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,13 +12,13 @@ import java.awt.event.ActionEvent;
 
 public class LoginPage extends BasePage {
 
-    private final App app;
+    private final PingPongClient app;
     private final LoginService loginService;
 
     private final JTextField usernameField;
     private final JPasswordField passwordField;
 
-    public LoginPage(App app, LoginService loginService) {
+    public LoginPage(PingPongClient app, LoginService loginService) {
         this.app = app;
         this.loginService = loginService;
 
@@ -66,10 +67,10 @@ public class LoginPage extends BasePage {
             );
 
             AppState.setJwtToken(token);
-            JOptionPane.showMessageDialog(this, "Login successful.");
-            app.showLobby();
+            DialogUtils.successDialog(this, "Login successful.");
+            app.showMainMenu();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            DialogUtils.errorDialog(this, "Cannot login.");
         }
     }
 
