@@ -24,6 +24,8 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
@@ -32,6 +34,7 @@ public class LobbyConnection {
     private static final String HOST = "localhost";
     private static final int PORT = 10101;
     private static final int MAX_PACKET_SIZE = 1024;
+    private static final int READ_TIMEOUT_MS = 1000;
 
     private final IEncoder<PacketOut> encoder;
     private final IDecoder<PacketIn> decoder;
@@ -76,8 +79,10 @@ public class LobbyConnection {
         enqueueWrite(new PacketOut(PacketType.JOIN_LOBBY_REQUEST, payload));
 
         PacketIn response = readSynchronously(socket);
-        if (response.getType() != PacketType.JOIN_LOBBY_RESPONSE)
+        if (response == null || response.getType() != PacketType.JOIN_LOBBY_RESPONSE) {
+            disconnect();
             throw new RuntimeException("Failed to join lobby");
+        }
         JoinLobbyResponse joinLobbyResponse = ObjectMapperHolder.get().readValue(symmetricEncryptionService.decrypt(response.getData(), key), JoinLobbyResponse.class);
         if (!joinLobbyResponse.isSuccess()) {
             disconnect();
@@ -85,7 +90,7 @@ public class LobbyConnection {
         }
 
         lobbyState = joinLobbyResponse.getLobby();
-        socket.read(ByteBuffer.allocate(MAX_PACKET_SIZE), null, new ReadHandler());
+        socket.read(ByteBuffer.allocate(MAX_PACKET_SIZE), READ_TIMEOUT_MS, TimeUnit.MILLISECONDS, null, new ReadHandler());
     }
 
     @SneakyThrows
@@ -151,7 +156,11 @@ public class LobbyConnection {
     private PacketIn readSynchronously(AsynchronousSocketChannel socket) {
         ByteBuffer buffer = ByteBuffer.allocate(MAX_PACKET_SIZE);
         while (true) {
-            socket.read(buffer).get();
+            try {
+                socket.read(buffer).get(READ_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException ex) {
+                return null;
+            }
             buffer.flip();
             PacketIn packetIn = decoder.decode(buffer);
             if (packetIn != null)
@@ -189,6 +198,7 @@ public class LobbyConnection {
         @SneakyThrows
         public void failed(Throwable exc, ByteBuffer buffer) {
             log.error("Failed to write to server", exc);
+            disconnect();
         }
     }
 
@@ -232,6 +242,7 @@ public class LobbyConnection {
         @SneakyThrows
         public void failed(Throwable exc, ByteBuffer buffer) {
             log.error("Failed to read from server", exc);
+            disconnect();
         }
     }
 }
