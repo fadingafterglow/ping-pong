@@ -8,6 +8,7 @@ import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
@@ -19,7 +20,9 @@ public class LobbyPage extends BasePage {
 
     private final JPanel playersPanel;
 
+    private final JPanel buttonsPanel;
     private final JButton startGameButton;
+    private final JButton leaveLobbyButton;
 
     public LobbyPage(PingPongClient app) {
         super(app);
@@ -58,22 +61,14 @@ public class LobbyPage extends BasePage {
         centerPanel.add(leftPanel);
         centerPanel.add(playersPanel);
 
-        JPanel bottomPanel = new JPanel();
+        buttonsPanel = new JPanel();
+        buttonsPanel.setLayout(new GridLayout(0, 1));
         startGameButton = new JButton("Start game");
-        bottomPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                int halfWidth = getWidth() / 2;
-                startGameButton.setPreferredSize(new Dimension(halfWidth, 30));
-                bottomPanel.revalidate();
-            }
-        });
-        bottomPanel.add(startGameButton);
+        leaveLobbyButton = new JButton("Leave lobby");
 
         setLayout(new BorderLayout());
         add(centerPanel, BorderLayout.CENTER);
-        add(bottomPanel, BorderLayout.SOUTH);
+        add(buttonsPanel, BorderLayout.SOUTH);
     }
 
     @Override
@@ -83,10 +78,24 @@ public class LobbyPage extends BasePage {
         GameLobbySnapshot snapshot = connection.getLobbyState();
         lobbyIdLabel.setText("Lobby id: " + appState.getLobbyId());
         updateAll(snapshot);
-        if (appState.getUserId() != snapshot.creatorId())
-            startGameButton.setVisible(false);
+        buttonsPanel.removeAll();
+        if (appState.getUserId() == snapshot.creatorId()) {
+            buttonsPanel.add(startGameButton);
+            startGameButton.addActionListener(e -> connection.sendStartGameRequest());
+        }
+        buttonsPanel.add(leaveLobbyButton);
+        leaveLobbyButton.addActionListener(this::onLeaveLobby);
         connection.setOnLobbyUpdateCallback(this::onLobbyUpdate);
-        startGameButton.addActionListener(e -> connection.sendStartGameRequest());
+    }
+
+    private void onLeaveLobby(ActionEvent e) {
+        AppState appState = app.getAppState();
+        LobbyConnection connection = appState.getLobbyConnection();
+        if (connection != null) {
+            connection.disconnect(false);
+            app.getAppState().clearLobbyConnection();
+        }
+        app.showMainMenu();
     }
 
     private void onLobbyUpdate(LobbyConnection connection) {

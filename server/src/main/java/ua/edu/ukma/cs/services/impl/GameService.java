@@ -162,6 +162,28 @@ public class GameService implements IGameService, ITcpRequestHandler {
         lobby.addMove(userId, request.isUp());
     }
 
+    @Override
+    public void handleDisconnect(AsynchronousConnection connection) {
+        UUID lobbyId = connection.getAttribute(LOBBY_ID_ATTRIBUTE);
+        if (lobbyId == null) return;
+        GameLobby lobby = lobbies.getIfPresent(lobbyId);
+        if (lobby == null) return;
+        int userId = connection.<SecurityContext>getAttribute(SECURITY_CONTEXT_ATTRIBUTE).getUserId();
+        synchronized (lobby) {
+            if (lobby.getLobbyState() != GameLobbyState.WAITING)
+                return;
+            AsynchronousConnection otherConnection = lobby.getOtherConnection(userId);
+            if (lobby.getCreatorId() == userId) {
+                lobbies.invalidate(lobbyId);
+                if (otherConnection != null)
+                    otherConnection.disconnect();
+            } else {
+                lobby.clearOtherPlayer();
+                sendGameLobbyStateUpdate(otherConnection, lobby.takeLobbySnapshot());
+            }
+        }
+    }
+
     private void updateGame(GameLobby lobby) {
         boolean shouldContinue = lobby.updateGameState();
         AsynchronousConnection connection = lobby.getConnection(0);

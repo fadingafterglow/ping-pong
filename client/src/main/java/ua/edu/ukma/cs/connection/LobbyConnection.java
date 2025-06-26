@@ -17,8 +17,10 @@ import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyResponse;
 import ua.edu.ukma.cs.tcp.packets.payload.MoveRacketRequest;
 import ua.edu.ukma.cs.utils.ObjectMapperHolder;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.util.UUID;
@@ -99,12 +101,15 @@ public class LobbyConnection {
         disconnect(true);
     }
 
-    @SneakyThrows
     public void disconnect(boolean runCallback) {
         if (socket == null)
             return;
         writeQueue.clear();
-        socket.close();
+        try {
+            socket.close();
+        } catch (IOException exception) {
+            log.error("Failed to close socket", exception);
+        }
         socket = null;
         key = null;
         if (onDisconnect != null && runCallback)
@@ -158,7 +163,11 @@ public class LobbyConnection {
                 tryWrite();
             return;
         }
-        socket.write(buffer, buffer, new WriteHandler());
+        try {
+            socket.write(buffer, buffer, new WriteHandler());
+        } catch (NullPointerException e) {
+            // expected if the socket was closed
+        }
     }
 
     @SneakyThrows
@@ -205,6 +214,8 @@ public class LobbyConnection {
 
         @Override
         public void failed(Throwable exc, ByteBuffer buffer) {
+            if (exc instanceof AsynchronousCloseException)
+                return;
             log.error("Failed to write to server", exc);
             disconnect();
         }
@@ -252,6 +263,8 @@ public class LobbyConnection {
 
         @Override
         public void failed(Throwable exc, ByteBuffer buffer) {
+            if (exc instanceof AsynchronousCloseException)
+                return;
             log.error("Failed to read from server", exc);
             disconnect();
         }

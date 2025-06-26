@@ -1,6 +1,5 @@
 package ua.edu.ukma.cs.tcp.connection;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import ua.edu.ukma.cs.tcp.encoders.IEncoder;
 import ua.edu.ukma.cs.tcp.packets.PacketOut;
@@ -16,14 +15,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AsynchronousConnection {
 
     private final AsynchronousSocketChannel socket;
+    private final Runnable onClientDisconnectCallback;
     private final IEncoder<PacketOut> encoder;
 
     private final AtomicBoolean isWriting;
     private final ConcurrentLinkedQueue<ByteBuffer> writeQueue;
     private final ConcurrentHashMap<String, Object> attributes;
 
-    public AsynchronousConnection(AsynchronousSocketChannel socket, IEncoder<PacketOut> encoder) {
+    public AsynchronousConnection(AsynchronousSocketChannel socket, Runnable onClientDisconnectCallback, IEncoder<PacketOut> encoder) {
         this.socket = socket;
+        this.onClientDisconnectCallback = onClientDisconnectCallback;
         this.encoder = encoder;
         this.isWriting = new AtomicBoolean();
         this.writeQueue = new ConcurrentLinkedQueue<>();
@@ -32,6 +33,11 @@ public class AsynchronousConnection {
 
     public boolean isClosed() {
         return !socket.isOpen();
+    }
+
+    public void disconnect() {
+        attributes.clear();
+        onClientDisconnectCallback.run();
     }
 
     public void setAttribute(String name, Object value) {
@@ -81,10 +87,8 @@ public class AsynchronousConnection {
         }
 
         @Override
-        @SneakyThrows
         public void failed(Throwable exc, ByteBuffer buffer) {
-            log.error("Failed to write to client", exc);
-            socket.close();
+            onClientDisconnectCallback.run();
         }
     }
 }

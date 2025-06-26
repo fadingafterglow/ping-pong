@@ -76,6 +76,12 @@ public class GameLobby {
         return false;
     }
 
+    public void clearOtherPlayer() {
+        otherPlayerConnection = null;
+        otherPlayerId = null;
+        otherPlayerUsername = null;
+    }
+
     public boolean startGame() {
         if (lobbyState != GameLobbyState.WAITING || otherPlayerId == null)
             return false;

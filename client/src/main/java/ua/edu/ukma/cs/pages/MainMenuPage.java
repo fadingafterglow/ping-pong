@@ -75,7 +75,7 @@ public class MainMenuPage extends BasePage {
 
     private void onDisconnect() {
         app.getAppState().clearLobbyConnection();
-        DialogUtils.errorDialog(this, "Connection lost.");
+        DialogUtils.errorDialog(app, "Connection lost.");
         app.showMainMenu();
     }
 } 

@@ -1,6 +1,7 @@
 package ua.edu.ukma.cs.app;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import ua.edu.ukma.cs.connection.LobbyConnection;
 import ua.edu.ukma.cs.pages.*;
 import ua.edu.ukma.cs.services.*;
@@ -11,6 +12,7 @@ import ua.edu.ukma.cs.tcp.encoders.PacketEncoder;
 import javax.swing.*;
 import java.awt.*;
 
+@Slf4j
 public class PingPongClient extends JFrame {
 
     private final CardLayout cardLayout = new CardLayout();
@@ -93,7 +95,9 @@ public class PingPongClient extends JFrame {
                 connection.disconnect(false);
                 appState.clearLobbyConnection();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ex) {
+            log.error("Error while cleaning resources", ex);
+        }
     }
 
     public static void main(String[] args) {
