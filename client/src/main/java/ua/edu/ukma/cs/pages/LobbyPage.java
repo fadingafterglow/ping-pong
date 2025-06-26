@@ -1,6 +1,5 @@
 package ua.edu.ukma.cs.pages;
 
-import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.app.PingPongClient;
 import ua.edu.ukma.cs.connection.LobbyConnection;
