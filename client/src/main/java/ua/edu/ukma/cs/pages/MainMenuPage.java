@@ -1,5 +1,6 @@
 package ua.edu.ukma.cs.pages;
 
+import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.services.CreateLobbyService;
 import ua.edu.ukma.cs.services.JoinLobbyService;
 import ua.edu.ukma.cs.app.PingPongClient;
@@ -53,8 +54,11 @@ public class MainMenuPage extends BasePage {
             String input = DialogUtils.inputDialog(this, "Enter lobby id:");
             if (input == null) return;
             UUID lobbyId = UUID.fromString(input);
-            setupConnection(lobbyId);
-            app.showLobby();
+            LobbyConnection connection = setupConnection(lobbyId);
+            if (connection.getLobbyState().state() == GameLobbyState.IN_PROGRESS)
+                app.showGame();
+            else
+                app.showLobby();
         } catch (IllegalArgumentException ex) {
             DialogUtils.errorDialog(this, "Invalid id format.");
         } catch (Exception ex) {
@@ -62,10 +66,11 @@ public class MainMenuPage extends BasePage {
         }
     }
 
-    private void setupConnection(UUID lobbyId) {
+    private LobbyConnection setupConnection(UUID lobbyId) {
         LobbyConnection connection = joinLobbyService.joinLobby(lobbyId, app.getAppState().getJwtToken());
         connection.setOnDisconnectCallback(this::onDisconnect);
         app.getAppState().setLobbyConnection(lobbyId, connection);
+        return connection;
     }
 
     private void onDisconnect() {

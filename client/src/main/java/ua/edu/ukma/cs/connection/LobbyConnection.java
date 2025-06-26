@@ -95,15 +95,19 @@ public class LobbyConnection {
         socket.read(buffer, buffer, new ReadHandler());
     }
 
-    @SneakyThrows
     public void disconnect() {
+        disconnect(true);
+    }
+
+    @SneakyThrows
+    public void disconnect(boolean runCallback) {
         if (socket == null)
             return;
         writeQueue.clear();
         socket.close();
         socket = null;
         key = null;
-        if (onDisconnect != null)
+        if (onDisconnect != null && runCallback)
             onDisconnect.run();
     }
 
@@ -200,7 +204,6 @@ public class LobbyConnection {
         }
 
         @Override
-        @SneakyThrows
         public void failed(Throwable exc, ByteBuffer buffer) {
             log.error("Failed to write to server", exc);
             disconnect();
@@ -248,7 +251,6 @@ public class LobbyConnection {
         }
 
         @Override
-        @SneakyThrows
         public void failed(Throwable exc, ByteBuffer buffer) {
             log.error("Failed to read from server", exc);
             disconnect();

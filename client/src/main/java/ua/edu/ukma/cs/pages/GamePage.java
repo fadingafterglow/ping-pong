@@ -69,8 +69,7 @@ public class GamePage extends BasePage {
         if (snapshot.state() != GameLobbyState.FINISHED)
             return;
         moveSender.shutdown();
-        connection.setOnDisconnectCallback(null);
-        connection.disconnect();
+        connection.disconnect(false);
         app.getAppState().clearLobbyConnection();
         DialogUtils.gameResultsDialog(this, app.getAppState().getUserId() == getWinnerId(snapshot, connection.getGameState()));
         app.showMainMenu();

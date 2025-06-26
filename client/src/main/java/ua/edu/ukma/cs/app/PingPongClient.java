@@ -87,10 +87,13 @@ public class PingPongClient extends JFrame {
     }
 
     private void cleanResources() {
-        LobbyConnection connection = appState.getLobbyConnection();
-        if (connection != null)
-            connection.disconnect();
-        appState.clearLobbyConnection();
+        try {
+            LobbyConnection connection = appState.getLobbyConnection();
+            if (connection != null) {
+                connection.disconnect(false);
+                appState.clearLobbyConnection();
+            }
+        } catch (Exception ignored) {}
     }
 
     public static void main(String[] args) {
