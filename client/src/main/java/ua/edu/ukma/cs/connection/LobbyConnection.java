@@ -34,7 +34,7 @@ public class LobbyConnection {
     private static final String HOST = "localhost";
     private static final int PORT = 10101;
     private static final int MAX_PACKET_SIZE = 1024;
-    private static final int READ_TIMEOUT_MS = 1000;
+    private static final int SYNCHRONOUS_READ_TIMEOUT_MS = 1000;
 
     private final IEncoder<PacketOut> encoder;
     private final IDecoder<PacketIn> decoder;
@@ -68,13 +68,13 @@ public class LobbyConnection {
     }
 
     @SneakyThrows
-    public void init(UUID lobbyId, byte[] publicKey) {
+    public void init(UUID lobbyId, String token, byte[] publicKey) {
         if (socket != null) return;
         socket = AsynchronousSocketChannel.open();
         socket.connect(new InetSocketAddress(HOST, PORT)).get();
         key = symmetricEncryptionService.generateKey();
 
-        JoinLobbyRequest joinLobbyRequest = new JoinLobbyRequest(lobbyId, AppState.getJwtToken(), key);
+        JoinLobbyRequest joinLobbyRequest = new JoinLobbyRequest(lobbyId, token, key);
         byte[] payload = asymmetricEncryptionService.encrypt(ObjectMapperHolder.get().writeValueAsBytes(joinLobbyRequest), publicKey);
         enqueueWrite(new PacketOut(PacketType.JOIN_LOBBY_REQUEST, payload));
 
@@ -90,7 +90,7 @@ public class LobbyConnection {
         }
 
         lobbyState = joinLobbyResponse.getLobby();
-        socket.read(ByteBuffer.allocate(MAX_PACKET_SIZE), READ_TIMEOUT_MS, TimeUnit.MILLISECONDS, null, new ReadHandler());
+        socket.read(ByteBuffer.allocate(MAX_PACKET_SIZE), null, new ReadHandler());
     }
 
     @SneakyThrows
@@ -157,7 +157,7 @@ public class LobbyConnection {
         ByteBuffer buffer = ByteBuffer.allocate(MAX_PACKET_SIZE);
         while (true) {
             try {
-                socket.read(buffer).get(READ_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                socket.read(buffer).get(SYNCHRONOUS_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             } catch (TimeoutException ex) {
                 return null;
             }

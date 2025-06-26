@@ -66,7 +66,7 @@ public class LoginPage extends BasePage {
                         .build()
             );
 
-            AppState.setJwtToken(token);
+            app.getAppState().setJwtToken(token);
             DialogUtils.successDialog(this, "Login successful.");
             app.showMainMenu();
         } catch (Exception ex) {

@@ -22,10 +22,10 @@ public class JoinLobbyService {
     private final IAsymmetricEncryptionService asymmetricEncryptionService;
 
     @SneakyThrows
-    public LobbyConnection joinLobby(UUID lobbyId) {
+    public LobbyConnection joinLobby(UUID lobbyId, String token) {
         byte[] publicKey = httpService.get("/public-key").body();
         LobbyConnection lobbyConnection = new LobbyConnection(encoder, decoder, asymmetricEncryptionService, symmetricEncryptionService);
-        lobbyConnection.init(lobbyId, publicKey);
+        lobbyConnection.init(lobbyId, token, publicKey);
         return lobbyConnection;
     }
 }

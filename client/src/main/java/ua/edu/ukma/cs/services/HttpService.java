@@ -12,11 +12,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 public class HttpService {
-    private static final String BASE_URL = "http://localhost:8080";
-    private final HttpClient client;
 
-    public HttpService() {
+    private static final String BASE_URL = "http://localhost:8080";
+
+    private final HttpClient client;
+    private final AppState appState;
+
+    public HttpService(AppState appState) {
         this.client = HttpClient.newHttpClient();
+        this.appState = appState;
     }
 
     @SneakyThrows
@@ -51,7 +55,7 @@ public class HttpService {
         var requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL + path));
 
-        String jwtToken = AppState.getJwtToken();
+        String jwtToken = appState.getJwtToken();
         if (jwtToken != null) {
             requestBuilder.header("Authentication", jwtToken);
         }
