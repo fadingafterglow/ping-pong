@@ -9,17 +9,42 @@ import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
 import ua.edu.ukma.cs.utils.DialogUtils;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class GamePage extends BasePage {
 
     private static final double FONT_SIZE_COEFFICIENT = 0.05;
+    private static final int INPUT_DELAY_MS = 10;
 
     private GameConfiguration config;
     private GameStateSnapshot state;
+    private ScheduledExecutorService moveSender;
+
+    private volatile boolean upPressed;
+    private volatile boolean downPressed;
 
     public GamePage(PingPongClient app) {
         super(app);
+
+        setBackground(Color.BLACK);
+
+        InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "downPressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0, true), "downReleased");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "upPressed");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0, true), "upReleased");
+
+        ActionMap actionMap = getActionMap();
+        actionMap.put("downPressed", actionOf(() -> downPressed = true));
+        actionMap.put("downReleased", actionOf(() -> downPressed = false));
+        actionMap.put("upPressed", actionOf(() -> upPressed = true));
+        actionMap.put("upReleased", actionOf(() -> upPressed = false));
     }
 
     @Override
@@ -29,7 +54,9 @@ public class GamePage extends BasePage {
         config = connection.getLobbyState().gameConfiguration();
         state = connection.getGameState();
         connection.setOnGameUpdateCallback(this::onGameUpdate);
-        connection.setOnLobbyUpdateCallback(this::onGameLobbyUpdate);
+        connection.setOnLobbyUpdateCallback(this::onLobbyUpdate);
+        moveSender = Executors.newSingleThreadScheduledExecutor();
+        moveSender.scheduleWithFixedDelay(() -> sendMoveIfNeeded(connection), 0, INPUT_DELAY_MS, TimeUnit.MILLISECONDS);
     }
 
     private void onGameUpdate(LobbyConnection connection) {
@@ -37,10 +64,11 @@ public class GamePage extends BasePage {
         repaint();
     }
 
-    private void onGameLobbyUpdate(LobbyConnection connection) {
+    private void onLobbyUpdate(LobbyConnection connection) {
         GameLobbySnapshot snapshot = connection.getLobbyState();
         if (snapshot.state() != GameLobbyState.FINISHED)
             return;
+        moveSender.shutdown();
         connection.setOnDisconnectCallback(null);
         connection.disconnect();
         app.getAppState().clearLobbyConnection();
@@ -52,6 +80,14 @@ public class GamePage extends BasePage {
         return gameSnapshot.player1Score() > gameSnapshot.player2Score() ? lobbySnapshot.creatorId() : lobbySnapshot.otherPlayerId();
     }
 
+    private void sendMoveIfNeeded(LobbyConnection connection) {
+        if (state == null) return;
+        if (upPressed)
+            connection.sendMoveRacketRequest(true);
+        if (downPressed)
+            connection.sendMoveRacketRequest(false);
+    }
+
     @Override
     protected void paintComponent(Graphics graphics) {
         super.paintComponent(graphics);
@@ -60,9 +96,6 @@ public class GamePage extends BasePage {
 
         int width = getWidth();
         int height = getHeight();
-
-        g.setColor(Color.BLACK);
-        g.fillRect(0, 0, width, height);
         g.setColor(Color.WHITE);
 
         Font font = new Font("Monospaced", Font.BOLD, scale(height, FONT_SIZE_COEFFICIENT));
@@ -108,4 +141,12 @@ public class GamePage extends BasePage {
         return (int) Math.round(value * coefficient);
     }
 
+    private Action actionOf(Runnable runnable) {
+        return new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runnable.run();
+            }
+        };
+    }
 } 

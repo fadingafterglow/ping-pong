@@ -35,6 +35,7 @@ public class LobbyConnection {
     private static final int PORT = 10101;
     private static final int MAX_PACKET_SIZE = 1024;
     private static final int SYNCHRONOUS_READ_TIMEOUT_MS = 1000;
+    private static final int WRITE_QUEUE_SIZE = 5;
 
     private final IEncoder<PacketOut> encoder;
     private final IDecoder<PacketIn> decoder;
@@ -98,6 +99,7 @@ public class LobbyConnection {
     public void disconnect() {
         if (socket == null)
             return;
+        writeQueue.clear();
         socket.close();
         socket = null;
         key = null;
@@ -134,6 +136,8 @@ public class LobbyConnection {
         ByteBuffer buffer = encoder.encode(packet);
         buffer.flip();
         writeQueue.offer(buffer);
+        if (writeQueue.size() > WRITE_QUEUE_SIZE)
+            writeQueue.poll();
         tryWrite();
     }
 
@@ -239,7 +243,7 @@ public class LobbyConnection {
             try {
                 socket.read(buffer, buffer, this);
             } catch (NullPointerException e) {
-                // expected if the socket is closed
+                // expected if the socket was closed
             }
         }
 
