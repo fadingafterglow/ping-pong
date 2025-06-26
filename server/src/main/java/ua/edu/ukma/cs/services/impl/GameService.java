@@ -10,6 +10,7 @@ import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
 import ua.edu.ukma.cs.security.JwtServices;
+import ua.edu.ukma.cs.security.SecurityContext;
 import ua.edu.ukma.cs.services.IAsymmetricDecryptionService;
 import ua.edu.ukma.cs.services.IGameResultService;
 import ua.edu.ukma.cs.services.IGameService;
@@ -34,7 +35,7 @@ import java.util.concurrent.*;
 public class GameService implements IGameService, ITcpRequestHandler {
 
     private static final String KEY_ATTRIBUTE = "key";
-    private static final String USER_ID_ATTRIBUTE = "userId";
+    private static final String SECURITY_CONTEXT_ATTRIBUTE = "securityContext";
     private static final String LOBBY_ID_ATTRIBUTE = "lobbyId";
 
     private final IGameResultService gameResultService;
@@ -92,11 +93,11 @@ public class GameService implements IGameService, ITcpRequestHandler {
                         connection.setAttribute(KEY_ATTRIBUTE, null);
                 }
                 case START_GAME_REQUEST ->
-                    handleStartGameRequest(connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.getAttribute(USER_ID_ATTRIBUTE));
+                    handleStartGameRequest(connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.<SecurityContext>getAttribute(SECURITY_CONTEXT_ATTRIBUTE).getUserId());
                 case MOVE_RACKET_REQUEST -> {
                     byte[] key = connection.getAttribute(KEY_ATTRIBUTE);
                     MoveRacketRequest request = extractPayload(packet.getData(), d -> symmetricEncryptionService.decrypt(d, key), MoveRacketRequest.class);
-                    handleMoveRacketRequest(request, connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.getAttribute(USER_ID_ATTRIBUTE));
+                    handleMoveRacketRequest(request, connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.<SecurityContext>getAttribute(SECURITY_CONTEXT_ATTRIBUTE).getUserId());
                 }
             }
         } catch (GeneralSecurityException | IOException | ValidationException ex) {
@@ -117,9 +118,9 @@ public class GameService implements IGameService, ITcpRequestHandler {
         GameLobby lobby = lobbies.getIfPresent(lobbyId);
         if (lobby == null)
             return new JoinLobbyResponse("Lobby not exists");
-        int userId;
+        SecurityContext playerContext;
         try {
-            userId = jwtServices.verifyToken(request.getUserJwt()).getUserId();
+            playerContext = jwtServices.verifyToken(request.getUserJwt());
         }
         catch (JWTVerificationException e) {
             return new JoinLobbyResponse("Authentication failed");
@@ -127,11 +128,11 @@ public class GameService implements IGameService, ITcpRequestHandler {
         synchronized (lobby) {
             if (lobby.getLobbyState() == GameLobbyState.FINISHED)
                 return new JoinLobbyResponse("Lobby is finished");
-            boolean hasJoined = lobby.join(userId, connection);
+            boolean hasJoined = lobby.join(playerContext, connection);
             if (hasJoined) {
-                connection.setAttribute(USER_ID_ATTRIBUTE, userId);
+                connection.setAttribute(SECURITY_CONTEXT_ATTRIBUTE, playerContext);
                 connection.setAttribute(LOBBY_ID_ATTRIBUTE, lobbyId);
-                sendGameLobbyStateUpdate(lobby.getOtherConnection(userId), lobby.takeLobbySnapshot());
+                sendGameLobbyStateUpdate(lobby.getOtherConnection(playerContext.getUserId()), lobby.takeLobbySnapshot());
                 return new JoinLobbyResponse(lobby.takeLobbySnapshot(true));
             }
         }

@@ -5,6 +5,7 @@ import lombok.Setter;
 import ua.edu.ukma.cs.game.configuration.GameConfiguration;
 import ua.edu.ukma.cs.game.state.GameState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
+import ua.edu.ukma.cs.security.SecurityContext;
 import ua.edu.ukma.cs.tcp.connection.AsynchronousConnection;
 
 import java.util.UUID;
@@ -30,10 +31,12 @@ public class GameLobby {
 
     @Getter
     private final int creatorId;
+    private String creatorUsername;
     private AsynchronousConnection creatorConnection;
     private final ConcurrentLinkedQueue<Boolean> creatorInputBuffer;
 
     private Integer otherPlayerId;
+    private String otherPlayerUsername;
     private AsynchronousConnection otherPlayerConnection;
     private final ConcurrentLinkedQueue<Boolean> otherPlayerInputBuffer;
 
@@ -55,16 +58,18 @@ public class GameLobby {
         this.lobbyState = GameLobbyState.WAITING;
     }
 
-    public boolean join(int userId, AsynchronousConnection connection) {
-        if (userId == creatorId) {
+    public boolean join(SecurityContext playerContext, AsynchronousConnection connection) {
+        if (playerContext.getUserId() == creatorId) {
             if (creatorConnection == null || creatorConnection.isClosed()) {
                 creatorConnection = connection;
+                creatorUsername = playerContext.getUsername();
                 return true;
             }
-        } else if (otherPlayerId == null || otherPlayerId == userId) {
+        } else if (otherPlayerId == null || playerContext.getUserId() == otherPlayerId) {
             if (otherPlayerConnection == null || otherPlayerConnection.isClosed()) {
-                otherPlayerId = userId;
                 otherPlayerConnection = connection;
+                otherPlayerId = playerContext.getUserId();
+                otherPlayerUsername = playerContext.getUsername();
                 return true;
             }
         }
@@ -127,7 +132,9 @@ public class GameLobby {
         return GameLobbySnapshot.builder()
                 .state(lobbyState)
                 .creatorId(creatorId)
+                .creatorUsername(creatorUsername)
                 .otherPlayerId(otherPlayerId)
+                .otherPlayerUsername(otherPlayerUsername)
                 .gameConfiguration(withConfiguration ? DEFAULT_CONFIGURATION : null)
                 .build();
     }
