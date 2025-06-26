@@ -133,7 +133,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
                 connection.setAttribute(SECURITY_CONTEXT_ATTRIBUTE, playerContext);
                 connection.setAttribute(LOBBY_ID_ATTRIBUTE, lobbyId);
                 sendGameLobbyStateUpdate(lobby.getOtherConnection(playerContext.getUserId()), lobby.takeLobbySnapshot());
-                return new JoinLobbyResponse(lobby.takeLobbySnapshot(true));
+                return new JoinLobbyResponse(lobby.takeLobbySnapshot());
             }
         }
         return new JoinLobbyResponse("User already in the lobby or it is full");

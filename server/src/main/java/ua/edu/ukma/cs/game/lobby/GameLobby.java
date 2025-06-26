@@ -125,17 +125,13 @@ public class GameLobby {
     }
 
     public GameLobbySnapshot takeLobbySnapshot() {
-        return takeLobbySnapshot(false);
-    }
-
-    public GameLobbySnapshot takeLobbySnapshot(boolean withConfiguration) {
         return GameLobbySnapshot.builder()
                 .state(lobbyState)
                 .creatorId(creatorId)
                 .creatorUsername(creatorUsername)
                 .otherPlayerId(otherPlayerId)
                 .otherPlayerUsername(otherPlayerUsername)
-                .gameConfiguration(withConfiguration ? DEFAULT_CONFIGURATION : null)
+                .gameConfiguration(DEFAULT_CONFIGURATION)
                 .build();
     }
 

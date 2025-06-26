@@ -41,7 +41,7 @@ public class MainMenuPage extends BasePage {
         try {
             UUID lobbyId = createLobbyService.createLobby();
             LobbyConnection connection = joinLobbyService.joinLobby(lobbyId, app.getAppState().getJwtToken());
-            app.getAppState().setLobbyConnection(connection);
+            app.getAppState().setLobbyConnection(lobbyId, connection);
             app.showLobby();
         } catch (Exception ex) {
             DialogUtils.errorDialog(this, "Failed to create lobby.");
@@ -50,10 +50,10 @@ public class MainMenuPage extends BasePage {
 
     private void onJoinLobby(ActionEvent e) {
         try {
-            String input = DialogUtils.inputDialog(this, "Enter lobby ID:");
+            String input = DialogUtils.inputDialog(this, "Enter lobby id:");
             UUID lobbyId = UUID.fromString(input);
             LobbyConnection connection = joinLobbyService.joinLobby(lobbyId, app.getAppState().getJwtToken());
-            app.getAppState().setLobbyConnection(connection);
+            app.getAppState().setLobbyConnection(lobbyId, connection);
             app.showLobby();
         } catch (IllegalArgumentException ex) {
             DialogUtils.errorDialog(this, "Invalid id format.");

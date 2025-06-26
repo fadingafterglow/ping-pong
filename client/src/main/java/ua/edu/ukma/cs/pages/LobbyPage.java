@@ -1,6 +1,10 @@
 package ua.edu.ukma.cs.pages;
 
+import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.app.PingPongClient;
+import ua.edu.ukma.cs.connection.LobbyConnection;
+import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
+import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,11 +15,13 @@ public class LobbyPage extends BasePage {
 
     private final PingPongClient app;
 
-    private final JLabel lobbyIdLabel;
+    private final JTextField lobbyIdLabel;
     private final JLabel lobbyMaxScoreLabel;
     private final JLabel lobbyStateLabel;
 
     private final JPanel playersPanel;
+
+    private final JButton startGameButton;
 
     public LobbyPage(PingPongClient app) {
         this.app = app;
@@ -29,11 +35,16 @@ public class LobbyPage extends BasePage {
                 ),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        lobbyIdLabel = new JLabel("?id", SwingConstants.LEFT);
         lobbyMaxScoreLabel = new JLabel("?maxScore", SwingConstants.LEFT);
         lobbyStateLabel = new JLabel("?state", SwingConstants.LEFT);
+        lobbyIdLabel = new JTextField();
+        lobbyIdLabel.setEditable(false);
+        lobbyIdLabel.setBackground(null);
+        lobbyIdLabel.setBorder(null);
+        lobbyIdLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, lobbyMaxScoreLabel.getPreferredSize().height));
         leftPanel.add(lobbyIdLabel);
         leftPanel.add(lobbyMaxScoreLabel);
+        leftPanel.add(lobbyStateLabel);
 
         playersPanel = new JPanel();
         playersPanel.setLayout(new BoxLayout(playersPanel, BoxLayout.Y_AXIS));
@@ -50,7 +61,7 @@ public class LobbyPage extends BasePage {
         centerPanel.add(playersPanel);
 
         JPanel bottomPanel = new JPanel();
-        JButton startGameButton = new JButton("Start game");
+        startGameButton = new JButton("Start game");
         bottomPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
         addComponentListener(new ComponentAdapter() {
             @Override
@@ -65,5 +76,61 @@ public class LobbyPage extends BasePage {
         setLayout(new BorderLayout());
         add(centerPanel, BorderLayout.CENTER);
         add(bottomPanel, BorderLayout.SOUTH);
+    }
+
+    @Override
+    public void init() {
+        AppState appState = app.getAppState();
+        LobbyConnection connection = appState.getLobbyConnection();
+        GameLobbySnapshot snapshot = connection.getLobbyState();
+        lobbyIdLabel.setText("Lobby id: " + appState.getLobbyId());
+        updateAll(snapshot);
+        if (appState.getUserId() != snapshot.creatorId())
+            startGameButton.setVisible(false);
+        connection.setOnLobbyUpdateCallback(() -> {
+            GameLobbySnapshot updatedSnapshot = connection.getLobbyState();
+            updateAll(updatedSnapshot);
+        });
+    }
+
+    private void updateAll(GameLobbySnapshot snapshot) {
+        updateLobbyInfo(snapshot);
+        updatePlayers(snapshot);
+        updateStartGameButton(snapshot);
+    }
+
+    private void updateLobbyInfo(GameLobbySnapshot snapshot) {
+        lobbyMaxScoreLabel.setText("Max score: " + snapshot.gameConfiguration().maxScore());
+        lobbyStateLabel.setText("State: " + getLobbyStateText(snapshot));
+    }
+
+    private void updatePlayers(GameLobbySnapshot snapshot) {
+        playersPanel.removeAll();
+        if (snapshot.creatorUsername() != null)
+            playersPanel.add(new JLabel("Player 1: " + snapshot.creatorUsername()));
+        if (snapshot.otherPlayerUsername() != null)
+            playersPanel.add(new JLabel("Player 2: " + snapshot.otherPlayerUsername()));
+        playersPanel.revalidate();
+        playersPanel.repaint();
+    }
+
+    private void updateStartGameButton(GameLobbySnapshot snapshot) {
+        startGameButton.setEnabled(canStartGame(snapshot));
+    }
+
+    private String getLobbyStateText(GameLobbySnapshot snapshot) {
+        if (canStartGame(snapshot))
+            return "Ready to start";
+        return switch (snapshot.state()) {
+            case WAITING -> "Waiting for players";
+            case IN_PROGRESS -> "Starting...";
+            case FINISHED -> "Game finished";
+        };
+    }
+
+    private boolean canStartGame(GameLobbySnapshot snapshot) {
+        return snapshot.state() == GameLobbyState.WAITING
+                && snapshot.creatorUsername() != null
+                && snapshot.otherPlayerUsername() != null;
     }
 }

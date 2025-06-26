@@ -90,7 +90,8 @@ public class LobbyConnection {
         }
 
         lobbyState = joinLobbyResponse.getLobby();
-        socket.read(ByteBuffer.allocate(MAX_PACKET_SIZE), null, new ReadHandler());
+        ByteBuffer buffer = ByteBuffer.allocate(MAX_PACKET_SIZE);
+        socket.read(buffer, buffer, new ReadHandler());
     }
 
     @SneakyThrows

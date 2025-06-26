@@ -28,7 +28,7 @@ public class PingPongClient extends JFrame {
     public PingPongClient() {
         setTitle("Ping Pong Game");
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setMinimumSize(new Dimension(500, 500));
+        setMinimumSize(new Dimension(800, 500));
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         appState = new AppState();
@@ -71,7 +71,7 @@ public class PingPongClient extends JFrame {
     }
 
     public void showLobby() {
-        gamePage.init();
+        lobbyPage.init();
         cardLayout.show(cards, LobbyPage.class.getSimpleName());
     }
 
