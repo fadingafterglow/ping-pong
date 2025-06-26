@@ -19,9 +19,13 @@ public class TransactionDelegate {
     }
 
     public TransactionDelegate(boolean isReadOnly, TransactionIsolation isolation) {
+        this(isReadOnly, isolation, PersistenceContext.getInstance().getTransactionManager());
+    }
+
+    public TransactionDelegate(boolean isReadOnly, TransactionIsolation isolation, TransactionManager transactionManager) {
         this.isReadOnly = isReadOnly;
         this.isolation = isolation;
-        this.transactionManager = PersistenceContext.getInstance().getTransactionManager();
+        this.transactionManager = transactionManager;
     }
 
     public void runInTransaction(Runnable runnable) {
