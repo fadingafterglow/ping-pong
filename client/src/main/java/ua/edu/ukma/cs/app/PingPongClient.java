@@ -31,6 +31,8 @@ public class PingPongClient extends JFrame {
         setMinimumSize(new Dimension(800, 500));
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
+        Runtime.getRuntime().addShutdownHook(new Thread(this::cleanResources));
+
         appState = new AppState();
 
         HttpService httpService = new HttpService(appState);
@@ -78,6 +80,17 @@ public class PingPongClient extends JFrame {
     public void showGame() {
         gamePage.init();
         cardLayout.show(cards, GamePage.class.getSimpleName());
+    }
+
+    public void exit() {
+        System.exit(0);
+    }
+
+    private void cleanResources() {
+        LobbyConnection connection = appState.getLobbyConnection();
+        if (connection != null)
+            connection.disconnect();
+        appState.clearLobbyConnection();
     }
 
     public static void main(String[] args) {
