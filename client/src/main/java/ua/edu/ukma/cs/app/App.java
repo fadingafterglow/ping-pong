@@ -1,10 +1,7 @@
 package ua.edu.ukma.cs.app;
 
 import ua.edu.ukma.cs.connection.LobbyConnection;
-import ua.edu.ukma.cs.pages.GamePage;
-import ua.edu.ukma.cs.pages.LoginPage;
-import ua.edu.ukma.cs.pages.RegisterPage;
-import ua.edu.ukma.cs.pages.MainMenuPage;
+import ua.edu.ukma.cs.pages.*;
 import ua.edu.ukma.cs.services.*;
 import ua.edu.ukma.cs.encryption.AesEncryptionService;
 import ua.edu.ukma.cs.tcp.decoders.PacketDecoder;
@@ -14,12 +11,9 @@ import javax.swing.*;
 import java.awt.*;
 
 public class App extends JFrame {
+
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel cards = new JPanel(cardLayout);
-
-    private final HttpService httpService = new HttpService();
-    private final RegisterService registerService = new RegisterService(httpService);
-    private final LoginService loginService = new LoginService(httpService);
 
     private final RegisterPage registerPage;
     private final LoginPage loginPage;
@@ -27,13 +21,16 @@ public class App extends JFrame {
     private final GamePage gamePage;
 
     public App() {
-        setTitle("Game App");
-        setSize(400, 250);
+        setTitle("Ping Pong Game");
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
 
-        registerPage = new RegisterPage(this, registerService);
+        HttpService httpService = new HttpService();
+        LoginService loginService = new LoginService(httpService);
+        RegisterService registerService = new RegisterService(httpService);
+
         loginPage = new LoginPage(this, loginService);
+        registerPage = new RegisterPage(this, registerService);
         mainMenuPage = new MainMenuPage(
             this,
             new CreateLobbyService(httpService),
@@ -41,8 +38,8 @@ public class App extends JFrame {
         );
         gamePage = new GamePage();
 
-        cards.add(registerPage, "register");
         cards.add(loginPage, "login");
+        cards.add(registerPage, "register");
         cards.add(mainMenuPage, "lobby");
         cards.add(gamePage, "game");
 
@@ -50,14 +47,14 @@ public class App extends JFrame {
         showLogin();
     }
 
-    public void showRegister() {
-        registerPage.init();
-        cardLayout.show(cards, "register");
-    }
-
     public void showLogin() {
         loginPage.init();
         cardLayout.show(cards, "login");
+    }
+
+    public void showRegister() {
+        registerPage.init();
+        cardLayout.show(cards, "register");
     }
 
     public void showLobby() {
