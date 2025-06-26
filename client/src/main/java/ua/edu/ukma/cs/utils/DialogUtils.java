@@ -16,4 +16,8 @@ public class DialogUtils {
     public static String inputDialog(Component parent, String message) {
         return JOptionPane.showInputDialog(parent, message, "Input", JOptionPane.QUESTION_MESSAGE);
     }
+
+    public static void gameResultsDialog(Component parent, boolean isWinner) {
+        JOptionPane.showMessageDialog(parent, isWinner ? "You won!" : "You lost...", "Game results", JOptionPane.INFORMATION_MESSAGE);
+    }
 }

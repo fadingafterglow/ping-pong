@@ -4,7 +4,10 @@ import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.app.PingPongClient;
 import ua.edu.ukma.cs.connection.LobbyConnection;
 import ua.edu.ukma.cs.game.configuration.GameConfiguration;
+import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
+import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
+import ua.edu.ukma.cs.utils.DialogUtils;
 
 import java.awt.*;
 
@@ -26,11 +29,27 @@ public class GamePage extends BasePage {
         config = connection.getLobbyState().gameConfiguration();
         state = connection.getGameState();
         connection.setOnGameUpdateCallback(this::onGameUpdate);
+        connection.setOnLobbyUpdateCallback(this::onGameLobbyUpdate);
     }
 
     private void onGameUpdate(LobbyConnection connection) {
         this.state = connection.getGameState();
         repaint();
+    }
+
+    private void onGameLobbyUpdate(LobbyConnection connection) {
+        GameLobbySnapshot snapshot = connection.getLobbyState();
+        if (snapshot.state() != GameLobbyState.FINISHED)
+            return;
+        connection.setOnDisconnectCallback(null);
+        connection.disconnect();
+        app.getAppState().clearLobbyConnection();
+        DialogUtils.gameResultsDialog(this, app.getAppState().getUserId() == getWinnerId(snapshot, connection.getGameState()));
+        app.showMainMenu();
+    }
+
+    private int getWinnerId(GameLobbySnapshot lobbySnapshot, GameStateSnapshot gameSnapshot) {
+        return gameSnapshot.player1Score() > gameSnapshot.player2Score() ? lobbySnapshot.creatorId() : lobbySnapshot.otherPlayerId();
     }
 
     @Override

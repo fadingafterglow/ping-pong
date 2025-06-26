@@ -236,7 +236,11 @@ public class LobbyConnection {
             readBuffer.compact();
 
             buffer.clear();
-            socket.read(buffer, buffer, this);
+            try {
+                socket.read(buffer, buffer, this);
+            } catch (NullPointerException e) {
+                // expected if the socket is closed
+            }
         }
 
         @Override
