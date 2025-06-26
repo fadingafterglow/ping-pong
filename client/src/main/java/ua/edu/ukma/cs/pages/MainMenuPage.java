@@ -14,12 +14,11 @@ import java.util.UUID;
 
 public class MainMenuPage extends BasePage {
 
-    private final PingPongClient app;
     private final CreateLobbyService createLobbyService;
     private final JoinLobbyService joinLobbyService;
 
     public MainMenuPage(PingPongClient app, CreateLobbyService createLobbyService, JoinLobbyService joinLobbyService) {
-        this.app = app;
+        super(app);
         this.createLobbyService = createLobbyService;
         this.joinLobbyService = joinLobbyService;
 

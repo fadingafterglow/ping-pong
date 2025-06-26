@@ -12,14 +12,13 @@ import java.awt.event.ActionEvent;
 
 public class LoginPage extends BasePage {
 
-    private final PingPongClient app;
     private final LoginService loginService;
 
     private final JTextField usernameField;
     private final JPasswordField passwordField;
 
     public LoginPage(PingPongClient app, LoginService loginService) {
-        this.app = app;
+        super(app);
         this.loginService = loginService;
 
         var formPanel = new JPanel(new GridLayout(4, 1, 0, 5));

@@ -16,14 +16,14 @@ public class GameLobby {
 
     private static final GameConfiguration DEFAULT_CONFIGURATION =
         GameConfiguration.builder()
-            .fieldWidth(800)
-            .fieldHeight(600)
-            .racketWidth(10)
-            .racketHeight(100)
-            .racketSpeed(4)
-            .ballRadius(8)
-            .initialBallSpeed(5)
-            .maxScore(13)
+            .fieldWidth(1920)
+            .fieldHeight(1080)
+            .racketWidth(24)
+            .racketHeight(180)
+            .racketSpeed(8)
+            .ballRadius(15)
+            .initialBallSpeed(10)
+            .maxScore(10)
             .build();
 
     @Getter

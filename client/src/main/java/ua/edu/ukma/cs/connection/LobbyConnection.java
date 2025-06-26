@@ -3,7 +3,6 @@ package ua.edu.ukma.cs.connection;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.encryption.ISymmetricEncryptionService;
 import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
@@ -27,6 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 @Slf4j
 public class LobbyConnection {
@@ -51,8 +51,8 @@ public class LobbyConnection {
     @Getter
     private volatile GameStateSnapshot gameState;
 
-    private Runnable onLobbyUpdate;
-    private Runnable onGameUpdate;
+    private Consumer<LobbyConnection> onLobbyUpdate;
+    private Consumer<LobbyConnection> onGameUpdate;
     private Runnable onDisconnect;
 
     public LobbyConnection(IEncoder<PacketOut> encoder, IDecoder<PacketIn> decoder,
@@ -105,11 +105,11 @@ public class LobbyConnection {
             onDisconnect.run();
     }
 
-    public void setOnLobbyUpdateCallback(Runnable onLobbyUpdate) {
+    public void setOnLobbyUpdateCallback(Consumer<LobbyConnection> onLobbyUpdate) {
         this.onLobbyUpdate = onLobbyUpdate;
     }
 
-    public void setOnGameUpdateCallback(Runnable onGameUpdate) {
+    public void setOnGameUpdateCallback(Consumer<LobbyConnection> onGameUpdate) {
         this.onGameUpdate = onGameUpdate;
     }
 
@@ -174,14 +174,14 @@ public class LobbyConnection {
     private void handleLobbyUpdate(byte[] payload) {
         lobbyState = ObjectMapperHolder.get().readValue(payload, GameLobbySnapshot.class);
         if (onLobbyUpdate != null)
-            onLobbyUpdate.run();
+            onLobbyUpdate.accept(this);
     }
 
     @SneakyThrows
     private void handleGameUpdate(byte[] payload) {
         gameState = ObjectMapperHolder.get().readValue(payload, GameStateSnapshot.class);
         if (onGameUpdate != null)
-            onGameUpdate.run();
+            onGameUpdate.accept(this);
     }
 
     private class WriteHandler implements CompletionHandler<Integer, ByteBuffer> {

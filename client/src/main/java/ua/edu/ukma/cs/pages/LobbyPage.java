@@ -1,5 +1,6 @@
 package ua.edu.ukma.cs.pages;
 
+import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.app.PingPongClient;
 import ua.edu.ukma.cs.connection.LobbyConnection;
@@ -13,8 +14,6 @@ import java.awt.event.ComponentEvent;
 
 public class LobbyPage extends BasePage {
 
-    private final PingPongClient app;
-
     private final JTextField lobbyIdLabel;
     private final JLabel lobbyMaxScoreLabel;
     private final JLabel lobbyStateLabel;
@@ -24,7 +23,7 @@ public class LobbyPage extends BasePage {
     private final JButton startGameButton;
 
     public LobbyPage(PingPongClient app) {
-        this.app = app;
+        super(app);
 
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
@@ -87,10 +86,18 @@ public class LobbyPage extends BasePage {
         updateAll(snapshot);
         if (appState.getUserId() != snapshot.creatorId())
             startGameButton.setVisible(false);
-        connection.setOnLobbyUpdateCallback(() -> {
-            GameLobbySnapshot updatedSnapshot = connection.getLobbyState();
-            updateAll(updatedSnapshot);
-        });
+        connection.setOnLobbyUpdateCallback(this::onLobbyUpdate);
+        startGameButton.addActionListener(e -> connection.sendStartGameRequest());
+    }
+
+    private void onLobbyUpdate(LobbyConnection connection) {
+        GameLobbySnapshot snapshot = connection.getLobbyState();
+        if (snapshot.state() == GameLobbyState.IN_PROGRESS) {
+            connection.setOnLobbyUpdateCallback(null);
+            app.showGame();
+            return;
+        }
+        updateAll(snapshot);
     }
 
     private void updateAll(GameLobbySnapshot snapshot) {
@@ -123,7 +130,7 @@ public class LobbyPage extends BasePage {
             return "Ready to start";
         return switch (snapshot.state()) {
             case WAITING -> "Waiting for players";
-            case IN_PROGRESS -> "Starting...";
+            case IN_PROGRESS -> "Game is in progress";
             case FINISHED -> "Game finished";
         };
     }

@@ -29,8 +29,12 @@ public class AppState {
 
     public void setLobbyConnection(UUID lobbyId, LobbyConnection lobbyConnection) {
         this.lobbyId = lobbyId;
-        if (this.lobbyConnection != null)
-            this.lobbyConnection.disconnect();
         this.lobbyConnection = lobbyConnection;
     }
+
+    public void clearLobbyConnection() {
+        lobbyConnection = null;
+        lobbyId = null;
+    }
+
 }

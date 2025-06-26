@@ -1,45 +1,92 @@
 package ua.edu.ukma.cs.pages;
 
-import javax.swing.*;
+import ua.edu.ukma.cs.app.AppState;
+import ua.edu.ukma.cs.app.PingPongClient;
+import ua.edu.ukma.cs.connection.LobbyConnection;
+import ua.edu.ukma.cs.game.configuration.GameConfiguration;
+import ua.edu.ukma.cs.game.state.GameStateSnapshot;
+
 import java.awt.*;
 
-import ua.edu.ukma.cs.connection.LobbyConnection;
-import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
-import ua.edu.ukma.cs.game.configuration.GameConfiguration;
-
 public class GamePage extends BasePage {
-    private LobbyConnection connection;
 
-    public GamePage() {
-        setLayout(new BorderLayout());
-    }
+    private static final double FONT_SIZE_COEFFICIENT = 0.05;
 
-    public void setConnection(LobbyConnection connection) {
-        this.connection = connection;
+    private GameConfiguration config;
+    private GameStateSnapshot state;
+
+    public GamePage(PingPongClient app) {
+        super(app);
     }
 
     @Override
     public void init() {
-        try {
-            GameLobbySnapshot snapshot = connection.getLobbyState();
-            GameConfiguration config = snapshot.gameConfiguration();
-            JPanel field = new JPanel(null);
-            field.setPreferredSize(new Dimension(config.fieldWidth(), config.fieldHeight()));
-            JLabel racket1 = new JLabel();
-            racket1.setBackground(Color.BLUE);
-            racket1.setOpaque(true);
-            racket1.setBounds(10, config.fieldHeight()/2 - config.racketHeight()/2, config.racketWidth(), config.racketHeight());
-            JLabel racket2 = new JLabel();
-            racket2.setBackground(Color.RED);
-            racket2.setOpaque(true);
-            racket2.setBounds(config.fieldWidth()-10-config.racketWidth(), config.fieldHeight()/2 - config.racketHeight()/2, config.racketWidth(), config.racketHeight());
-            field.add(racket1);
-            field.add(racket2);
-            add(field, BorderLayout.CENTER);
-        } catch (Exception ex) {
-            add(new JLabel("Error: " + ex.getMessage(), SwingConstants.CENTER), BorderLayout.CENTER);
-        }
-        revalidate();
+        AppState appState = app.getAppState();
+        LobbyConnection connection = appState.getLobbyConnection();
+        config = connection.getLobbyState().gameConfiguration();
+        state = connection.getGameState();
+        connection.setOnGameUpdateCallback(this::onGameUpdate);
+    }
+
+    private void onGameUpdate(LobbyConnection connection) {
+        this.state = connection.getGameState();
         repaint();
     }
+
+    @Override
+    protected void paintComponent(Graphics graphics) {
+        super.paintComponent(graphics);
+
+        Graphics2D g = (Graphics2D) graphics;
+
+        int width = getWidth();
+        int height = getHeight();
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, width, height);
+        g.setColor(Color.WHITE);
+
+        Font font = new Font("Monospaced", Font.BOLD, scale(height, FONT_SIZE_COEFFICIENT));
+        g.setFont(font);
+        FontMetrics metrics = g.getFontMetrics(font);
+        int textHeight = metrics.getHeight();
+        int ascent = metrics.getAscent();
+
+        if (state == null) {
+            String text = "Starting...";
+            int textWidth = metrics.stringWidth(text);
+            g.drawString(text, (width - textWidth) / 2, (height - textHeight) / 2 + ascent);
+            return;
+        }
+
+        double xCoefficient = (double) width / config.fieldWidth();
+        double yCoefficient = (double) height / config.fieldHeight();
+
+        g.fillRect(
+                scale(state.player1RacketX(), xCoefficient), scale(state.player1RacketY(), yCoefficient),
+                scale(config.racketWidth(), xCoefficient), scale(config.racketHeight(), yCoefficient)
+        );
+
+        g.fillRect(
+                scale(state.player2RacketX(), xCoefficient), scale(state.player2RacketY(), yCoefficient),
+                scale(config.racketWidth(), xCoefficient), scale(config.racketHeight(), yCoefficient)
+        );
+
+        int d = config.ballRadius() * 2;
+        g.fillOval(
+                scale(state.ballX() - config.ballRadius(), xCoefficient),
+                scale(state.ballY() - config.ballRadius(), yCoefficient),
+                scale(d, xCoefficient),
+                scale(d, yCoefficient)
+        );
+
+        String text = state.player1Score() + " : " + state.player2Score();
+        int textWidth = metrics.stringWidth(text);
+        g.drawString(text, (width - textWidth) / 2, textHeight);
+    }
+
+    private int scale(int value, double coefficient) {
+        return (int) Math.round(value * coefficient);
+    }
+
 } 

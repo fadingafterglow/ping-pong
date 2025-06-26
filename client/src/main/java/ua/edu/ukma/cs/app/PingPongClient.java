@@ -43,13 +43,13 @@ public class PingPongClient extends JFrame {
         registerPage = new RegisterPage(this, registerService);
         mainMenuPage = new MainMenuPage(this, createLobbyService, joinLobbyService);
         lobbyPage = new LobbyPage(this);
-        gamePage = new GamePage();
+        gamePage = new GamePage(this);
 
         cards.add(loginPage, LoginPage.class.getSimpleName());
         cards.add(registerPage, RegisterPage.class.getSimpleName());
         cards.add(mainMenuPage, MainMenuPage.class.getSimpleName());
         cards.add(lobbyPage, LobbyPage.class.getSimpleName());
-        //cards.add(gamePage, GamePage.class.getSimpleName());
+        cards.add(gamePage, GamePage.class.getSimpleName());
 
         add(cards);
         showLogin();
@@ -73,6 +73,11 @@ public class PingPongClient extends JFrame {
     public void showLobby() {
         lobbyPage.init();
         cardLayout.show(cards, LobbyPage.class.getSimpleName());
+    }
+
+    public void showGame() {
+        gamePage.init();
+        cardLayout.show(cards, GamePage.class.getSimpleName());
     }
 
     public static void main(String[] args) {
