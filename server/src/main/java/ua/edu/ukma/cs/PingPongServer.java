@@ -1,6 +1,8 @@
 package ua.edu.ukma.cs;
 
 import com.sun.net.httpserver.Filter;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import ua.edu.ukma.cs.api.endpoints.*;
@@ -29,8 +31,11 @@ import ua.edu.ukma.cs.tcp.encoders.IEncoder;
 import ua.edu.ukma.cs.tcp.encoders.PacketEncoder;
 import ua.edu.ukma.cs.tcp.packets.PacketIn;
 import ua.edu.ukma.cs.tcp.packets.PacketOut;
+import ua.edu.ukma.cs.utils.PropertiesUtils;
 
+import javax.net.ssl.*;
 import java.io.IOException;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -38,12 +43,10 @@ import java.util.Properties;
 @Slf4j
 public class PingPongServer {
 
-    private static final String PROPERTIES_FILE = "/application.properties";
-
     public static void main(String[] args) throws IOException {
         log.info("Starting Ping Pong Game...");
 
-        Properties properties = loadProperties();
+        Properties properties = PropertiesUtils.loadProperties();
         PersistenceContext.init(properties);
         new DefaultMigrationRunner().runMigrations();
 
@@ -63,6 +66,7 @@ public class PingPongServer {
         IServer apiServer = new ApiServer(
                 buildRouter(userService, gameResultService, gameService, asymmetricEncryptionService),
                 buildFilters(jwtServices),
+                buildHttpsConfigurator(properties),
                 properties
         );
 
@@ -126,9 +130,34 @@ public class PingPongServer {
     }
 
     @SneakyThrows
-    private static Properties loadProperties() {
-        Properties properties = new Properties();
-        properties.load(PersistenceContext.class.getResourceAsStream(PROPERTIES_FILE));
-        return properties;
+    private static HttpsConfigurator buildHttpsConfigurator(Properties properties) {
+        char[] password = properties.getProperty("keystore.password").toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(PingPongServer.class.getResourceAsStream("/keystore.jks"), password);
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, password);
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+        return new HttpsConfigurator(sslContext) {
+            public void configure(HttpsParameters params) {
+                try {
+                    SSLContext c = getSSLContext();
+                    SSLEngine engine = c.createSSLEngine();
+                    params.setNeedClientAuth(false);
+                    params.setCipherSuites(engine.getEnabledCipherSuites());
+                    params.setProtocols(engine.getEnabledProtocols());
+                    SSLParameters sslParameters = c.getDefaultSSLParameters();
+                    params.setSSLParameters(sslParameters);
+                } catch (Exception ex) {
+                    log.error("Failed to configure HTTPS parameters", ex);
+                }
+            }
+        };
     }
 }

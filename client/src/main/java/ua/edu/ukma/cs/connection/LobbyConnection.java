@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -33,11 +34,11 @@ import java.util.function.Consumer;
 @Slf4j
 public class LobbyConnection {
 
-    private static final String HOST = "localhost";
-    private static final int PORT = 10101;
-    private static final int MAX_PACKET_SIZE = 1024;
-    private static final int SYNCHRONOUS_READ_TIMEOUT_MS = 1000;
-    private static final int WRITE_QUEUE_SIZE = 5;
+    private final String host;
+    private final int port;
+    private final int maxPacketSize;
+    private final int synchronousReadTimeoutMs;
+    private final int writeQueueSize;
 
     private final IEncoder<PacketOut> encoder;
     private final IDecoder<PacketIn> decoder;
@@ -60,8 +61,13 @@ public class LobbyConnection {
 
     public LobbyConnection(IEncoder<PacketOut> encoder, IDecoder<PacketIn> decoder,
                            IAsymmetricEncryptionService asymmetricEncryptionService,
-                           ISymmetricEncryptionService symmetricEncryptionService)
+                           ISymmetricEncryptionService symmetricEncryptionService, Properties properties)
     {
+        this.host = properties.getProperty("game.server.host");
+        this.port = Integer.parseInt(properties.getProperty("game.server.port", "10101"));
+        this.maxPacketSize = Integer.parseInt(properties.getProperty("game.server.maxPacketSize", "1024"));
+        this.synchronousReadTimeoutMs = Integer.parseInt(properties.getProperty("game.server.synchronousReadTimeoutMs", "1000"));
+        this.writeQueueSize = Integer.parseInt(properties.getProperty("game.server.writeQueueSize", "5"));
         this.encoder = encoder;
         this.decoder = decoder;
         this.asymmetricEncryptionService = asymmetricEncryptionService;
@@ -74,7 +80,7 @@ public class LobbyConnection {
     public void init(UUID lobbyId, String token, byte[] publicKey) {
         if (socket != null) return;
         socket = AsynchronousSocketChannel.open();
-        socket.connect(new InetSocketAddress(HOST, PORT)).get();
+        socket.connect(new InetSocketAddress(host, port)).get();
         key = symmetricEncryptionService.generateKey();
 
         JoinLobbyRequest joinLobbyRequest = new JoinLobbyRequest(lobbyId, token, key);
@@ -93,7 +99,7 @@ public class LobbyConnection {
         }
 
         lobbyState = joinLobbyResponse.getLobby();
-        ByteBuffer buffer = ByteBuffer.allocate(MAX_PACKET_SIZE);
+        ByteBuffer buffer = ByteBuffer.allocate(maxPacketSize);
         socket.read(buffer, buffer, new ReadHandler());
     }
 
@@ -145,7 +151,7 @@ public class LobbyConnection {
         ByteBuffer buffer = encoder.encode(packet);
         buffer.flip();
         writeQueue.offer(buffer);
-        if (writeQueue.size() > WRITE_QUEUE_SIZE)
+        if (writeQueue.size() > writeQueueSize)
             writeQueue.poll();
         tryWrite();
     }
@@ -172,10 +178,10 @@ public class LobbyConnection {
 
     @SneakyThrows
     private PacketIn readSynchronously(AsynchronousSocketChannel socket) {
-        ByteBuffer buffer = ByteBuffer.allocate(MAX_PACKET_SIZE);
+        ByteBuffer buffer = ByteBuffer.allocate(maxPacketSize);
         while (true) {
             try {
-                socket.read(buffer).get(SYNCHRONOUS_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                socket.read(buffer).get(synchronousReadTimeoutMs, TimeUnit.MILLISECONDS);
             } catch (TimeoutException ex) {
                 return null;
             }
@@ -226,7 +232,7 @@ public class LobbyConnection {
         private final ByteBuffer readBuffer;
 
         public ReadHandler() {
-            this.readBuffer = ByteBuffer.allocate(MAX_PACKET_SIZE * 2);
+            this.readBuffer = ByteBuffer.allocate(maxPacketSize * 2);
         }
 
         @Override
