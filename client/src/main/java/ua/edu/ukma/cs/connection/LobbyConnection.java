@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 @Slf4j
 public class LobbyConnection {
 
-    private static final String HOST = "localhost";
+    private static final String HOST = "164.92.174.229";
     private static final int PORT = 10101;
     private static final int MAX_PACKET_SIZE = 1024;
     private static final int SYNCHRONOUS_READ_TIMEOUT_MS = 1000;

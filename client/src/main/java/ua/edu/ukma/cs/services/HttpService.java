@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public class HttpService {
 
-    private static final String BASE_URL = "http://localhost:8080";
+    private static final String BASE_URL = "http://164.92.174.229:8080";
 
     private final HttpClient client;
     private final AppState appState;
