@@ -19,6 +19,10 @@ public abstract class BaseRepository<TEntity> {
         this.transactionManager = PersistenceContext.getInstance().getTransactionManager();
     }
 
+    public BaseRepository(TransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
     protected <R> R withStatementInCurrentTransaction(String sql, SqlExceptionThrowingFunction<PreparedStatement, R> function) {
         return withStatementInCurrentTransaction(sql, false, function);
     }

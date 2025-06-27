@@ -19,14 +19,24 @@ public class UserService {
     private final JwtServices jwtServices;
 
     public UserService(UserRepository repository, JwtServices jwtServices) {
+        this(repository, jwtServices, new TransactionDelegate(), new TransactionDelegate(true));
+    }
+
+    public UserService(UserRepository repository, JwtServices jwtServices, TransactionDelegate transactionDelegate, TransactionDelegate readOnlyTransactionDelegate) {
         this.repository = repository;
         this.jwtServices = jwtServices;
-        this.transactionDelegate = new TransactionDelegate();
-        this.readOnlyTransactionDelegate = new TransactionDelegate(true);
+        this.transactionDelegate = transactionDelegate;
+        this.readOnlyTransactionDelegate = readOnlyTransactionDelegate;
         this.passwordHashGenerator = new PasswordHashGenerator();
     }
 
     public int register(RegisterUserRequestDto dto) {
+        Validator.validate(dto)
+                .notNullNotBlank(RegisterUserRequestDto::getUsername)
+                .maxLength(RegisterUserRequestDto::getUsername, 64)
+                .notNullNotBlank(RegisterUserRequestDto::getPassword)
+                .maxLength(RegisterUserRequestDto::getPassword, 64);
+
         return transactionDelegate.runInTransaction(() -> {
             UserEntity entity = UserEntity.builder()
                     .username(dto.getUsername())
@@ -40,11 +50,11 @@ public class UserService {
     }
 
     public String login(LoginUserRequestDto dto) {
-        return readOnlyTransactionDelegate.runInTransaction(() -> {
-            Validator.validate(dto)
-                    .notNullNotBlank(LoginUserRequestDto::getUsername)
-                    .notNullNotBlank(LoginUserRequestDto::getPassword);
+        Validator.validate(dto)
+                .notNullNotBlank(LoginUserRequestDto::getUsername)
+                .notNullNotBlank(LoginUserRequestDto::getPassword);
 
+        return readOnlyTransactionDelegate.runInTransaction(() -> {
             UserEntity userEntity = repository.findByUsername(dto.getUsername())
                     .orElseThrow(NotFoundException::new);
 
@@ -62,10 +72,6 @@ public class UserService {
 
     private void validateEntity(UserEntity entity) {
         Validator.validate(entity)
-                .notNullNotBlank(UserEntity::getUsername)
-                .maxLength(UserEntity::getUsername, 64)
-                .notNullNotBlank(UserEntity::getPasswordHash)
-                .maxLength(UserEntity::getUsername, 250)
                 .unique(
                         UserEntity::getUsername,
                         () -> this.repository.findByUsername(entity.getUsername())
