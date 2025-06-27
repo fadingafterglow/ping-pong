@@ -14,6 +14,7 @@ import java.util.Map;
 @SuperBuilder
 public class GameResultFilter extends BaseFilter {
     private Integer userId;
+    private String username;
     private Integer minThisUserScore;
     private Integer maxThisUserScore;
     private Integer minOtherUserScore;
@@ -24,6 +25,7 @@ public class GameResultFilter extends BaseFilter {
     public static GameResultFilter fromDto(GameResultFilterDto dto, int userId) {
         return GameResultFilter.builder()
                 .userId(userId)
+                .username(dto.getUsername())
                 .minThisUserScore(dto.getMinThisUserScore())
                 .maxThisUserScore(dto.getMaxThisUserScore())
                 .minOtherUserScore(dto.getMinOtherUserScore())
@@ -41,6 +43,7 @@ public class GameResultFilter extends BaseFilter {
     protected List<String> formWhereConditions(Map<String, String> fieldExpressionMap) {
         return new ConditionsBuilder()
                 .expression(userId, fieldExpressionMap.get("userId"))
+                .expression(username, fieldExpressionMap.get("username"))
                 .min(minThisUserScore, fieldExpressionMap.get("thisUserScore"))
                 .max(maxThisUserScore, fieldExpressionMap.get("thisUserScore"))
                 .min(minOtherUserScore, fieldExpressionMap.get("otherUserScore"))
@@ -54,7 +57,9 @@ public class GameResultFilter extends BaseFilter {
     public void setParameters(PreparedStatement st, int parametersIndexOffset) {
         ParametersSetter setter = new ParametersSetter(st, parametersIndexOffset)
                 .setInt(userId)
-                .setInt(userId);
+                .setInt(userId)
+                .setLikeString(username)
+                .setLikeString(username);
         if (minThisUserScore != null)
             setter.setInt(userId).setInt(minThisUserScore);
         if (maxThisUserScore != null)

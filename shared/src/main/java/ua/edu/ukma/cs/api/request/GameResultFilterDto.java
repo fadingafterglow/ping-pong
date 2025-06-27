@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class GameResultFilterDto {
+    private String username;
     private Integer minThisUserScore;
     private Integer maxThisUserScore;
     private Integer minOtherUserScore;
