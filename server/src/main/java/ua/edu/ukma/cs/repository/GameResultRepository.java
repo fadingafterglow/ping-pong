@@ -14,6 +14,7 @@ import java.util.Optional;
 public class GameResultRepository extends BaseRepository<GameResultEntity> {
     private static final Map<String, String> FIELD_EXPRESSION_MAP = Map.of(
             "id", "id",
+            "username", "(LOWER(c.username) LIKE ? OR LOWER(o.username) LIKE ?)",
             "thisUserScore", "(CASE WHEN creator_id = ? THEN creator_score ELSE other_score END)",
             "otherUserScore", "(CASE WHEN creator_id = ? THEN other_score ELSE creator_score END)",
             "timeFinished", "time_finished",
@@ -39,27 +40,27 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
 
     public Optional<GameResultEntity> getById(int id) {
         String sql = """
-        SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
-               c.username AS creator_username, o.username AS other_username
-        FROM game_results r
-            JOIN users c ON r.creator_id = c.id
-            JOIN users o ON r.other_user_id = o.id
-        WHERE id = ?
-        """;
+                SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
+                       c.username AS creator_username, o.username AS other_username
+                FROM game_results r
+                    JOIN users c ON r.creator_id = c.id
+                    JOIN users o ON r.other_user_id = o.id
+                WHERE id = ?
+                """;
         return withStatementInCurrentTransaction(sql, statement -> {
-           statement.setInt(1, id);
-           return queryOne(statement);
+            statement.setInt(1, id);
+            return queryOne(statement);
         });
     }
 
     public List<GameResultEntity> getAllByFilter(GameResultFilter filter) {
         String sql = """
-        SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
-               c.username AS creator_username, o.username AS other_username
-        FROM game_results r
-            JOIN users c ON r.creator_id = c.id
-            JOIN users o ON r.other_user_id = o.id
-        """;
+                SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
+                       c.username AS creator_username, o.username AS other_username
+                FROM game_results r
+                    JOIN users c ON r.creator_id = c.id
+                    JOIN users o ON r.other_user_id = o.id
+                """;
         sql = filter.addFilteringAndPagination(sql, FIELD_EXPRESSION_MAP);
         return withStatementInCurrentTransaction(sql, statement -> {
             filter.setParameters(statement);
@@ -68,7 +69,12 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     }
 
     public long countByFilter(GameResultFilter filter) {
-        String sql = "SELECT COUNT(*) FROM game_results";
+        String sql = """
+        SELECT COUNT(*)
+        FROM game_results r
+            JOIN users c ON r.creator_id = c.id
+            JOIN users o ON r.other_user_id = o.id
+        """;
         sql = filter.addFiltering(sql, FIELD_EXPRESSION_MAP);
         return withStatementInCurrentTransaction(sql, statement -> {
             filter.setParameters(statement);

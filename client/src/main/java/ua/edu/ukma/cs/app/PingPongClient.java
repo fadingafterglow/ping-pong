@@ -24,6 +24,7 @@ public class PingPongClient extends JFrame {
     private final LobbyPage lobbyPage;
     private final GamePage gamePage;
     private final GamesResultsPage gamesResultsPage;
+    private final ProfilePage profilePage;
 
     @Getter
     private final AppState appState;
@@ -44,6 +45,7 @@ public class PingPongClient extends JFrame {
         CreateLobbyService createLobbyService = new CreateLobbyService(httpService);
         JoinLobbyService joinLobbyService = new JoinLobbyService(httpService, new PacketEncoder(), new PacketDecoder(), new AesEncryptionService(), new RsaEncryptionService());
         GamesResultsService gamesResultsService = new GamesResultsService(httpService);
+        GamesResultsStatsService gamesResultsStatsService = new GamesResultsStatsService(httpService);
 
         loginPage = new LoginPage(this, loginService);
         registerPage = new RegisterPage(this, registerService);
@@ -51,6 +53,7 @@ public class PingPongClient extends JFrame {
         lobbyPage = new LobbyPage(this);
         gamePage = new GamePage(this);
         gamesResultsPage = new GamesResultsPage(this, gamesResultsService);
+        profilePage = new ProfilePage(this, gamesResultsStatsService);
 
         cards.add(loginPage, LoginPage.class.getSimpleName());
         cards.add(registerPage, RegisterPage.class.getSimpleName());
@@ -58,6 +61,7 @@ public class PingPongClient extends JFrame {
         cards.add(lobbyPage, LobbyPage.class.getSimpleName());
         cards.add(gamePage, GamePage.class.getSimpleName());
         cards.add(gamesResultsPage, GamesResultsPage.class.getSimpleName());
+        cards.add(profilePage, ProfilePage.class.getSimpleName());
 
         add(cards);
         showLogin();
@@ -91,6 +95,11 @@ public class PingPongClient extends JFrame {
     public void showGamesResults() {
         gamesResultsPage.init();
         cardLayout.show(cards, GamesResultsPage.class.getSimpleName());
+    }
+
+    public void showProfile() {
+        profilePage.init();
+        cardLayout.show(cards, ProfilePage.class.getSimpleName());
     }
 
     public void exit() {

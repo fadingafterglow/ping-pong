@@ -11,7 +11,13 @@ public class ConditionsBuilder {
     private final List<String> conditions = new ArrayList<>();
 
     public ConditionsBuilder expression(Object value, String expression) {
-        if(value == null) return this;
+        if (value == null) return this;
+        conditions.add(expression);
+        return this;
+    }
+
+    public ConditionsBuilder expression(String value, String expression) {
+        if (value == null || value.isBlank()) return this;
         conditions.add(expression);
         return this;
     }

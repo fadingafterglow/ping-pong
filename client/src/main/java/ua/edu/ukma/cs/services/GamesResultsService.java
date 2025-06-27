@@ -15,7 +15,7 @@ public class GamesResultsService {
 
     @SneakyThrows
     public GameResultListResponse getGameResultsByFilter(GameResultFilterDto filter) {
-        HttpResponse<byte[]> createLobbyResponse = httpService.get("/game-result", filter);
-        return ObjectMapperHolder.get().readValue(createLobbyResponse.body(), GameResultListResponse.class);
+        HttpResponse<byte[]> httpResponse = httpService.get("/game-result", filter);
+        return ObjectMapperHolder.get().readValue(httpResponse.body(), GameResultListResponse.class);
     }
 }
