@@ -1,7 +1,7 @@
 package ua.edu.ukma.cs.api.routing;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import ua.edu.ukma.cs.utils.SharedObjectMapper;
+import ua.edu.ukma.cs.utils.ObjectMapperHolder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -12,7 +12,7 @@ public record RouteHandlerResult(int statusCode, byte[] body, Optional<String> c
     }
 
     public static RouteHandlerResult json(Object body) throws JsonProcessingException {
-        return new RouteHandlerResult(200, SharedObjectMapper.S.writeValueAsBytes(body), Optional.of("application/json"));
+        return new RouteHandlerResult(200, ObjectMapperHolder.get().writeValueAsBytes(body), Optional.of("application/json"));
     }
 
     public static RouteHandlerResult string(String str) {

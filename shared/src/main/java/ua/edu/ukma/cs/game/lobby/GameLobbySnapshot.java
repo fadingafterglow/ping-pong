@@ -7,7 +7,9 @@ import ua.edu.ukma.cs.game.configuration.GameConfiguration;
 public record GameLobbySnapshot(
     GameLobbyState state,
     int creatorId,
+    String creatorUsername,
     Integer otherPlayerId,
+    String otherPlayerUsername,
     GameConfiguration gameConfiguration
 )
 {}

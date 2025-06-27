@@ -10,16 +10,17 @@ import ua.edu.ukma.cs.api.routing.HttpMethod;
 import ua.edu.ukma.cs.api.routing.Router;
 import ua.edu.ukma.cs.database.context.PersistenceContext;
 import ua.edu.ukma.cs.database.migration.DefaultMigrationRunner;
+import ua.edu.ukma.cs.encryption.AesEncryptionService;
 import ua.edu.ukma.cs.repository.GameResultRepository;
 import ua.edu.ukma.cs.repository.UserRepository;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.servers.ApiServer;
 import ua.edu.ukma.cs.servers.GameServer;
 import ua.edu.ukma.cs.servers.IServer;
-import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
+import ua.edu.ukma.cs.services.IAsymmetricDecryptionService;
 import ua.edu.ukma.cs.services.IGameResultService;
 import ua.edu.ukma.cs.services.IGameService;
-import ua.edu.ukma.cs.services.ISymmetricEncryptionService;
+import ua.edu.ukma.cs.encryption.ISymmetricEncryptionService;
 import ua.edu.ukma.cs.services.impl.*;
 import ua.edu.ukma.cs.tcp.decoders.IDecoder;
 import ua.edu.ukma.cs.tcp.decoders.PacketDecoder;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.Properties;
 
 @Slf4j
-public class PingPongGame {
+public class PingPongServer {
 
     private static final String PROPERTIES_FILE = "/application.properties";
 
@@ -53,7 +54,7 @@ public class PingPongGame {
         GameResultRepository gameResultRepository = new GameResultRepository();
         IGameResultService gameResultService = new GameResultService(gameResultRepository);
 
-        IAsymmetricEncryptionService asymmetricEncryptionService = new RsaEncryptionService();
+        IAsymmetricDecryptionService asymmetricEncryptionService = new RsaDecryptionService();
         ISymmetricEncryptionService symmetricEncryptionService = new AesEncryptionService();
         GameService gameService = new GameService(gameResultService, jwtServices, asymmetricEncryptionService, symmetricEncryptionService, properties);
 
@@ -74,7 +75,7 @@ public class PingPongGame {
     private static Router buildRouter(UserService userService,
                                       IGameResultService gameResultService,
                                       IGameService gameService,
-                                      IAsymmetricEncryptionService asymmetricEncryptionService) {
+                                      IAsymmetricDecryptionService asymmetricEncryptionService) {
         Router router = new Router();
 
         router.addRoute("/register",

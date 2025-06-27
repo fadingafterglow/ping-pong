@@ -5,6 +5,7 @@ import lombok.Setter;
 import ua.edu.ukma.cs.game.configuration.GameConfiguration;
 import ua.edu.ukma.cs.game.state.GameState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
+import ua.edu.ukma.cs.security.SecurityContext;
 import ua.edu.ukma.cs.tcp.connection.AsynchronousConnection;
 
 import java.util.UUID;
@@ -15,14 +16,14 @@ public class GameLobby {
 
     private static final GameConfiguration DEFAULT_CONFIGURATION =
         GameConfiguration.builder()
-            .fieldWidth(800)
-            .fieldHeight(600)
-            .racketWidth(10)
-            .racketHeight(100)
-            .racketSpeed(4)
-            .ballRadius(8)
-            .initialBallSpeed(5)
-            .maxScore(13)
+            .fieldWidth(1920)
+            .fieldHeight(1080)
+            .racketWidth(24)
+            .racketHeight(180)
+            .racketSpeed(8)
+            .ballRadius(15)
+            .initialBallSpeed(10)
+            .maxScore(10)
             .build();
 
     @Getter
@@ -30,10 +31,12 @@ public class GameLobby {
 
     @Getter
     private final int creatorId;
+    private String creatorUsername;
     private AsynchronousConnection creatorConnection;
     private final ConcurrentLinkedQueue<Boolean> creatorInputBuffer;
 
     private Integer otherPlayerId;
+    private String otherPlayerUsername;
     private AsynchronousConnection otherPlayerConnection;
     private final ConcurrentLinkedQueue<Boolean> otherPlayerInputBuffer;
 
@@ -55,20 +58,28 @@ public class GameLobby {
         this.lobbyState = GameLobbyState.WAITING;
     }
 
-    public boolean join(int userId, AsynchronousConnection connection) {
-        if (userId == creatorId) {
+    public boolean join(SecurityContext playerContext, AsynchronousConnection connection) {
+        if (playerContext.getUserId() == creatorId) {
             if (creatorConnection == null || creatorConnection.isClosed()) {
                 creatorConnection = connection;
+                creatorUsername = playerContext.getUsername();
                 return true;
             }
-        } else if (otherPlayerId == null || otherPlayerId == userId) {
+        } else if (otherPlayerId == null || playerContext.getUserId() == otherPlayerId) {
             if (otherPlayerConnection == null || otherPlayerConnection.isClosed()) {
-                otherPlayerId = userId;
                 otherPlayerConnection = connection;
+                otherPlayerId = playerContext.getUserId();
+                otherPlayerUsername = playerContext.getUsername();
                 return true;
             }
         }
         return false;
+    }
+
+    public void clearOtherPlayer() {
+        otherPlayerConnection = null;
+        otherPlayerId = null;
+        otherPlayerUsername = null;
     }
 
     public boolean startGame() {
@@ -120,15 +131,13 @@ public class GameLobby {
     }
 
     public GameLobbySnapshot takeLobbySnapshot() {
-        return takeLobbySnapshot(false);
-    }
-
-    public GameLobbySnapshot takeLobbySnapshot(boolean withConfiguration) {
         return GameLobbySnapshot.builder()
                 .state(lobbyState)
                 .creatorId(creatorId)
+                .creatorUsername(creatorUsername)
                 .otherPlayerId(otherPlayerId)
-                .gameConfiguration(withConfiguration ? DEFAULT_CONFIGURATION : null)
+                .otherPlayerUsername(otherPlayerUsername)
+                .gameConfiguration(DEFAULT_CONFIGURATION)
                 .build();
     }
 

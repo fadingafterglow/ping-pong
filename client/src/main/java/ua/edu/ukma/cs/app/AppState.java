@@ -1,13 +1,40 @@
 package ua.edu.ukma.cs.app;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import lombok.Getter;
+import ua.edu.ukma.cs.connection.LobbyConnection;
+
+import java.util.UUID;
+
+@Getter
 public class AppState {
-    private static String jwtToken;
 
-    public static void setJwtToken(String token) {
-        jwtToken = token;
+    private Integer userId;
+
+    private String username;
+
+    private String jwtToken;
+
+    private UUID lobbyId;
+
+    private LobbyConnection lobbyConnection;
+
+    public void setJwtToken(String jwtToken) {
+        this.jwtToken = jwtToken;
+        DecodedJWT decodedJWT = JWT.decode(jwtToken);
+        this.userId = decodedJWT.getClaim("USER_ID").asInt();
+        this.username = decodedJWT.getSubject();
     }
 
-    public static String getJwtToken() {
-        return jwtToken;
+    public void setLobbyConnection(UUID lobbyId, LobbyConnection lobbyConnection) {
+        this.lobbyId = lobbyId;
+        this.lobbyConnection = lobbyConnection;
     }
+
+    public void clearLobbyConnection() {
+        lobbyConnection = null;
+        lobbyId = null;
+    }
+
 }

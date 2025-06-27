@@ -1,10 +1,11 @@
-package ua.edu.ukma.cs.services.impl;
+package ua.edu.ukma.cs.encryption;
 
 import lombok.SneakyThrows;
 import ua.edu.ukma.cs.exception.ValidationException;
-import ua.edu.ukma.cs.services.ISymmetricEncryptionService;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 
@@ -19,6 +20,14 @@ public class AesEncryptionService implements ISymmetricEncryptionService {
     @SneakyThrows
     private static Cipher createCipher() {
         return Cipher.getInstance("AES/ECB/PKCS5Padding");
+    }
+
+    @SneakyThrows
+    public byte[] generateKey() {
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(128);
+        SecretKey secretKey = keyGen.generateKey();
+        return secretKey.getEncoded();
     }
 
     @Override

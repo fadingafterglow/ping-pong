@@ -1,5 +1,6 @@
 package ua.edu.ukma.cs.repository;
 
+import ua.edu.ukma.cs.database.transaction.TransactionManager;
 import ua.edu.ukma.cs.entity.UserEntity;
 
 import java.sql.ResultSet;
@@ -15,6 +16,14 @@ public class UserRepository extends BaseRepository<UserEntity> {
             "id", "id",
             "username", "username"
     );
+
+    public UserRepository() {
+        super();
+    }
+
+    public UserRepository(TransactionManager transactionManager) {
+        super(transactionManager);
+    }
 
     public int create(UserEntity entity) {
         String sql = "INSERT INTO users (username, password_hash) VALUES (?, ?)";

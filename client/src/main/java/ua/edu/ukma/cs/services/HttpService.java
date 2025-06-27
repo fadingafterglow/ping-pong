@@ -1,51 +1,78 @@
 package ua.edu.ukma.cs.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.SneakyThrows;
+import ua.edu.ukma.cs.app.AppState;
+import ua.edu.ukma.cs.utils.ObjectMapperHolder;
+
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 public class HttpService {
+
     private static final String BASE_URL = "http://localhost:8080";
+
     private final HttpClient client;
-    private final ObjectMapper mapper;
+    private final AppState appState;
 
-    public HttpService() {
+    public HttpService(AppState appState) {
         this.client = HttpClient.newHttpClient();
-        this.mapper = new ObjectMapper();
+        this.appState = appState;
     }
 
-    public String postJson(String path, Object body) throws Exception {
-        String requestBody = mapper.writeValueAsString(body);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return response.body();
+    @SneakyThrows
+    public HttpResponse<byte[]> get(String path) {
+        return get(path, Optional.empty());
     }
 
-    public int postJsonStatus(String path, Object body) throws Exception {
-        String requestBody = mapper.writeValueAsString(body);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        return response.statusCode();
+    @SneakyThrows
+    public HttpResponse<byte[]> get(String path, Object body) {
+        byte[] jsonBody = ObjectMapperHolder.get().writeValueAsBytes(body);
+        return get(path, Optional.of(jsonBody));
     }
 
-    public HttpResponse<String> postJsonFullResponse(String path, Object body) throws Exception {
-        String requestBody = mapper.writeValueAsString(body);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path))
+    @SneakyThrows
+    private HttpResponse<byte[]> get(String path, Optional<byte[]> jsonBody) {
+        HttpRequest.Builder requestBuilder = buildBaseRequest(path)
+                .GET();
+        jsonBody.ifPresent(b -> requestBuilder
+                .method("GET", HttpRequest.BodyPublishers.ofByteArray(b))
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-        return client.send(request, HttpResponse.BodyHandlers.ofString());
+        );
+        return client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
     }
-} 
+
+    public HttpResponse<byte[]> post(String path) {
+        return post(path, Optional.empty());
+    }
+
+    @SneakyThrows
+    public HttpResponse<byte[]> post(String path, Object body) {
+        byte[] jsonBody = ObjectMapperHolder.get().writeValueAsBytes(body);
+        return post(path, Optional.of(jsonBody));
+    }
+
+    @SneakyThrows
+    private HttpResponse<byte[]> post(String path, Optional<byte[]> jsonBody) {
+        HttpRequest.Builder requestBuilder = buildBaseRequest(path)
+                .header("Content-Type", "application/json")
+                .POST(jsonBody.map(HttpRequest.BodyPublishers::ofByteArray).orElseGet(HttpRequest.BodyPublishers::noBody));
+
+        HttpRequest request = requestBuilder.build();
+        return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+    }
+
+    private HttpRequest.Builder buildBaseRequest(String path) {
+        var requestBuilder = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + path));
+
+        String jwtToken = appState.getJwtToken();
+        if (jwtToken != null) {
+            requestBuilder.header("Authentication", jwtToken);
+        }
+
+        return requestBuilder;
+    }
+}

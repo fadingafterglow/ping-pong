@@ -17,5 +17,7 @@ public class GameResultEntity {
     private int otherScore;
     private LocalDateTime timeFinished;
     private int creatorId;
+    private String creatorUsername;
     private int otherUserId;
+    private String otherUsername;
 }

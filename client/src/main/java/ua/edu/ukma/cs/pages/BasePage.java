@@ -1,7 +1,16 @@
 package ua.edu.ukma.cs.pages;
 
+import ua.edu.ukma.cs.app.PingPongClient;
+
 import javax.swing.*;
 
 public abstract class BasePage extends JPanel {
-    public abstract void init();
+
+    protected final PingPongClient app;
+
+    public BasePage(PingPongClient app) {
+        this.app = app;
+    }
+
+    public void init() {}
 } 

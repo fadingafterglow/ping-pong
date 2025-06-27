@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import ua.edu.ukma.cs.api.routing.exceptions.RequestParsingErrorException;
 import ua.edu.ukma.cs.security.SecurityContext;
-import ua.edu.ukma.cs.utils.SharedObjectMapper;
+import ua.edu.ukma.cs.utils.ObjectMapperHolder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +36,7 @@ public class RouteContext {
     }
 
     private <T> T parseJsonFromBody(Class<T> clazz) throws IOException {
-        return SharedObjectMapper.S.readValue(body, clazz);
+        return ObjectMapperHolder.get().readValue(body, clazz);
     }
 
     public int getIntFromRouteParam(String paramName) throws RequestParsingErrorException {

@@ -10,10 +10,11 @@ import ua.edu.ukma.cs.game.lobby.GameLobbySnapshot;
 import ua.edu.ukma.cs.game.lobby.GameLobbyState;
 import ua.edu.ukma.cs.game.state.GameStateSnapshot;
 import ua.edu.ukma.cs.security.JwtServices;
-import ua.edu.ukma.cs.services.IAsymmetricEncryptionService;
+import ua.edu.ukma.cs.security.SecurityContext;
+import ua.edu.ukma.cs.services.IAsymmetricDecryptionService;
 import ua.edu.ukma.cs.services.IGameResultService;
 import ua.edu.ukma.cs.services.IGameService;
-import ua.edu.ukma.cs.services.ISymmetricEncryptionService;
+import ua.edu.ukma.cs.encryption.ISymmetricEncryptionService;
 import ua.edu.ukma.cs.tcp.connection.AsynchronousConnection;
 import ua.edu.ukma.cs.tcp.handlers.ITcpRequestHandler;
 import ua.edu.ukma.cs.tcp.packets.PacketIn;
@@ -22,7 +23,7 @@ import ua.edu.ukma.cs.tcp.packets.PacketType;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyRequest;
 import ua.edu.ukma.cs.tcp.packets.payload.JoinLobbyResponse;
 import ua.edu.ukma.cs.tcp.packets.payload.MoveRacketRequest;
-import ua.edu.ukma.cs.utils.SharedObjectMapper;
+import ua.edu.ukma.cs.utils.ObjectMapperHolder;
 import ua.edu.ukma.cs.validation.Validator;
 
 import java.io.IOException;
@@ -34,12 +35,12 @@ import java.util.concurrent.*;
 public class GameService implements IGameService, ITcpRequestHandler {
 
     private static final String KEY_ATTRIBUTE = "key";
-    private static final String USER_ID_ATTRIBUTE = "userId";
+    private static final String SECURITY_CONTEXT_ATTRIBUTE = "securityContext";
     private static final String LOBBY_ID_ATTRIBUTE = "lobbyId";
 
     private final IGameResultService gameResultService;
     private final JwtServices jwtServices;
-    private final IAsymmetricEncryptionService asymmetricEncryptionService;
+    private final IAsymmetricDecryptionService asymmetricEncryptionService;
     private final ISymmetricEncryptionService symmetricEncryptionService;
 
     private final Cache<UUID, GameLobby> lobbies;
@@ -50,7 +51,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
     private final ExecutorService resultsSaver;
 
     public GameService(IGameResultService gameResultService, JwtServices jwtServices,
-                       IAsymmetricEncryptionService asymmetricEncryptionService, ISymmetricEncryptionService symmetricEncryptionService,
+                       IAsymmetricDecryptionService asymmetricEncryptionService, ISymmetricEncryptionService symmetricEncryptionService,
                        Properties properties)
     {
         this.gameResultService = gameResultService;
@@ -62,7 +63,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
         this.lobbies = CacheBuilder.newBuilder()
                 .expireAfterAccess(idleTimeout, TimeUnit.MINUTES)
                 .build();
-        this.startDelay = Integer.parseInt(properties.getProperty("game.lobby.startDelay", "5000"));
+        this.startDelay = Integer.parseInt(properties.getProperty("game.lobby.startDelay", "2000"));
         this.updateInterval = Integer.parseInt(properties.getProperty("game.lobby.updateInterval", "15"));
         int schedulerCoreThreads = Integer.parseInt(properties.getProperty("game.scheduler.coreThreads", "2"));
         this.gameScheduler = Executors.newScheduledThreadPool(schedulerCoreThreads);
@@ -92,11 +93,11 @@ public class GameService implements IGameService, ITcpRequestHandler {
                         connection.setAttribute(KEY_ATTRIBUTE, null);
                 }
                 case START_GAME_REQUEST ->
-                    handleStartGameRequest(connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.getAttribute(USER_ID_ATTRIBUTE));
+                    handleStartGameRequest(connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.<SecurityContext>getAttribute(SECURITY_CONTEXT_ATTRIBUTE).getUserId());
                 case MOVE_RACKET_REQUEST -> {
                     byte[] key = connection.getAttribute(KEY_ATTRIBUTE);
                     MoveRacketRequest request = extractPayload(packet.getData(), d -> symmetricEncryptionService.decrypt(d, key), MoveRacketRequest.class);
-                    handleMoveRacketRequest(request, connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.getAttribute(USER_ID_ATTRIBUTE));
+                    handleMoveRacketRequest(request, connection.getAttribute(LOBBY_ID_ATTRIBUTE), connection.<SecurityContext>getAttribute(SECURITY_CONTEXT_ATTRIBUTE).getUserId());
                 }
             }
         } catch (GeneralSecurityException | IOException | ValidationException ex) {
@@ -117,9 +118,9 @@ public class GameService implements IGameService, ITcpRequestHandler {
         GameLobby lobby = lobbies.getIfPresent(lobbyId);
         if (lobby == null)
             return new JoinLobbyResponse("Lobby not exists");
-        int userId;
+        SecurityContext playerContext;
         try {
-            userId = jwtServices.verifyToken(request.getUserJwt()).getUserId();
+            playerContext = jwtServices.verifyToken(request.getUserJwt());
         }
         catch (JWTVerificationException e) {
             return new JoinLobbyResponse("Authentication failed");
@@ -127,12 +128,12 @@ public class GameService implements IGameService, ITcpRequestHandler {
         synchronized (lobby) {
             if (lobby.getLobbyState() == GameLobbyState.FINISHED)
                 return new JoinLobbyResponse("Lobby is finished");
-            boolean hasJoined = lobby.join(userId, connection);
+            boolean hasJoined = lobby.join(playerContext, connection);
             if (hasJoined) {
-                connection.setAttribute(USER_ID_ATTRIBUTE, userId);
+                connection.setAttribute(SECURITY_CONTEXT_ATTRIBUTE, playerContext);
                 connection.setAttribute(LOBBY_ID_ATTRIBUTE, lobbyId);
-                sendGameLobbyStateUpdate(lobby.getOtherConnection(userId), lobby.takeLobbySnapshot());
-                return new JoinLobbyResponse(lobby.takeLobbySnapshot(true));
+                sendGameLobbyStateUpdate(lobby.getOtherConnection(playerContext.getUserId()), lobby.takeLobbySnapshot());
+                return new JoinLobbyResponse(lobby.takeLobbySnapshot());
             }
         }
         return new JoinLobbyResponse("User already in the lobby or it is full");
@@ -159,6 +160,28 @@ public class GameService implements IGameService, ITcpRequestHandler {
         GameLobby lobby = lobbies.getIfPresent(lobbyId);
         if (lobby == null) return;
         lobby.addMove(userId, request.isUp());
+    }
+
+    @Override
+    public void handleDisconnect(AsynchronousConnection connection) {
+        UUID lobbyId = connection.getAttribute(LOBBY_ID_ATTRIBUTE);
+        if (lobbyId == null) return;
+        GameLobby lobby = lobbies.getIfPresent(lobbyId);
+        if (lobby == null) return;
+        int userId = connection.<SecurityContext>getAttribute(SECURITY_CONTEXT_ATTRIBUTE).getUserId();
+        synchronized (lobby) {
+            if (lobby.getLobbyState() != GameLobbyState.WAITING)
+                return;
+            AsynchronousConnection otherConnection = lobby.getOtherConnection(userId);
+            if (lobby.getCreatorId() == userId) {
+                lobbies.invalidate(lobbyId);
+                if (otherConnection != null)
+                    otherConnection.disconnect();
+            } else {
+                lobby.clearOtherPlayer();
+                sendGameLobbyStateUpdate(otherConnection, lobby.takeLobbySnapshot());
+            }
+        }
     }
 
     private void updateGame(GameLobby lobby) {
@@ -200,12 +223,12 @@ public class GameService implements IGameService, ITcpRequestHandler {
     }
 
     private <T> T extractPayload(byte[] data, Decryptor decryptor, Class<T> type) throws IOException, GeneralSecurityException {
-        return SharedObjectMapper.S.readValue(decryptor.decrypt(data), type);
+        return ObjectMapperHolder.get().readValue(decryptor.decrypt(data), type);
     }
 
     @SneakyThrows
     private <T> byte[] serializePayload(T payload, Encryptor encryptor) {
-        return encryptor.encrypt(SharedObjectMapper.S.writeValueAsBytes(payload));
+        return encryptor.encrypt(ObjectMapperHolder.get().writeValueAsBytes(payload));
     }
 
     @FunctionalInterface

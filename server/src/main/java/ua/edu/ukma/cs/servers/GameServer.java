@@ -85,17 +85,22 @@ public class GameServer implements IServer {
 
         public ReadHandler(AsynchronousSocketChannel socket) {
             this.socket = socket;
-            this.connection = new AsynchronousConnection(socket, encoder);
+            this.connection = new AsynchronousConnection(socket, this::onClientDisconnect, encoder);
             this.readBuffer = ByteBuffer.allocate(maxPacketSize * 2);
         }
 
         @Override
         @SneakyThrows
         public void completed(Integer result, ByteBuffer buffer) {
-            if (!running || result == -1) {
+            if (!running) {
                 socket.close();
                 return;
             }
+            if (result == -1) {
+                onClientDisconnect();
+                return;
+            }
+
             buffer.flip();
             readBuffer.put(buffer);
 
@@ -117,10 +122,18 @@ public class GameServer implements IServer {
         }
 
         @Override
-        @SneakyThrows
         public void failed(Throwable exc, ByteBuffer buffer) {
-            log.error("Failed to read from client", exc);
-            socket.close();
+            onClientDisconnect();
+        }
+
+        private void onClientDisconnect() {
+            try {
+                if (socket.isOpen())
+                    socket.close();
+            } catch (IOException e) {
+                log.error("Failed to close socket on client disconnect", e);
+            }
+            requestHandler.handleDisconnect(connection);
         }
     }
 }
