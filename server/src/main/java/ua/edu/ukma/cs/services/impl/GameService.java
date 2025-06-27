@@ -63,7 +63,7 @@ public class GameService implements IGameService, ITcpRequestHandler {
         this.lobbies = CacheBuilder.newBuilder()
                 .expireAfterAccess(idleTimeout, TimeUnit.MINUTES)
                 .build();
-        this.startDelay = Integer.parseInt(properties.getProperty("game.lobby.startDelay", "5000"));
+        this.startDelay = Integer.parseInt(properties.getProperty("game.lobby.startDelay", "2000"));
         this.updateInterval = Integer.parseInt(properties.getProperty("game.lobby.updateInterval", "15"));
         int schedulerCoreThreads = Integer.parseInt(properties.getProperty("game.scheduler.coreThreads", "2"));
         this.gameScheduler = Executors.newScheduledThreadPool(schedulerCoreThreads);
