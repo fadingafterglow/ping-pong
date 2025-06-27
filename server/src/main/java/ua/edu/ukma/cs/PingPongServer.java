@@ -12,6 +12,7 @@ import ua.edu.ukma.cs.database.context.PersistenceContext;
 import ua.edu.ukma.cs.database.migration.DefaultMigrationRunner;
 import ua.edu.ukma.cs.encryption.AesEncryptionService;
 import ua.edu.ukma.cs.repository.GameResultRepository;
+import ua.edu.ukma.cs.repository.GameResultStatsRepository;
 import ua.edu.ukma.cs.repository.UserRepository;
 import ua.edu.ukma.cs.security.JwtServices;
 import ua.edu.ukma.cs.servers.ApiServer;
@@ -52,7 +53,8 @@ public class PingPongServer {
         UserService userService = new UserService(userRepository, jwtServices);
 
         GameResultRepository gameResultRepository = new GameResultRepository();
-        IGameResultService gameResultService = new GameResultService(gameResultRepository);
+        GameResultStatsRepository gameResultStatsRepository = new GameResultStatsRepository();
+        IGameResultService gameResultService = new GameResultService(gameResultRepository, gameResultStatsRepository);
 
         IAsymmetricDecryptionService asymmetricEncryptionService = new RsaDecryptionService();
         ISymmetricEncryptionService symmetricEncryptionService = new AesEncryptionService();
@@ -96,6 +98,11 @@ public class PingPongServer {
         router.addRoute("/game-result/(?<id>\\d+)",
                 HttpMethod.GET,
                 routeContext -> new GetGameResultByIdRouteHandler(routeContext, gameResultService)
+        );
+
+        router.addRoute("/game-result/stats",
+                HttpMethod.GET,
+                routeContext -> new GetGameResultStatsRouteHandler(routeContext, gameResultService)
         );
 
         router.addRoute("/game",
