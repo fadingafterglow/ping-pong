@@ -11,19 +11,14 @@ public class GameResultStatsRepository extends BaseRepository<GameResultStats> {
     public Optional<GameResultStats> getStatsForUser(int userId) {
         String sql = """
                 WITH all_games_of_user AS (
-                    SELECT r.creator_id, r.other_user_id, r.creator_score, r.other_user_score,
-                           CASE
-                                WHEN r.creator_id = ? THEN r.creator_score
-                                ELSE r.other_score
-                           END AS user_score
-                    FROM game_results r
-                        JOIN users c ON r.creator_id = c.id
-                        JOIN users o ON r.other_user_id = o.id
-                    WHERE c.id = ? OR o.id = ?
+                    SELECT (CASE WHEN creator_id = ? THEN creator_score ELSE other_score END) AS this_user_score,
+                           (CASE WHEN creator_id = ? THEN other_score ELSE creator_score END) AS other_user_score,
+                    FROM game_results
+                    WHERE creator_id = ? OR other_user_id = ?
                 )
                 SELECT COUNT(*) AS total_games,
-                       COUNT FILTER (WHERE user_score > LEAST(creator_score, other_score)) AS wins,
-                       AVG(user_score) AS average_score
+                       COUNT FILTER (WHERE this_user_score > other_user_score) AS wins,
+                       AVG(this_user_score) AS average_score
                 FROM all_games_of_user;
                 """;
 
@@ -31,6 +26,7 @@ public class GameResultStatsRepository extends BaseRepository<GameResultStats> {
             statement.setInt(1, userId);
             statement.setInt(2, userId);
             statement.setInt(3, userId);
+            statement.setInt(4, userId);
 
             return queryOne(statement);
         });
