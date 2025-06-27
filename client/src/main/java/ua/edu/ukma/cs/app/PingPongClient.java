@@ -23,6 +23,7 @@ public class PingPongClient extends JFrame {
     private final MainMenuPage mainMenuPage;
     private final LobbyPage lobbyPage;
     private final GamePage gamePage;
+    private final GamesResultsPage gamesResultsPage;
 
     @Getter
     private final AppState appState;
@@ -42,18 +43,21 @@ public class PingPongClient extends JFrame {
         RegisterService registerService = new RegisterService(httpService);
         CreateLobbyService createLobbyService = new CreateLobbyService(httpService);
         JoinLobbyService joinLobbyService = new JoinLobbyService(httpService, new PacketEncoder(), new PacketDecoder(), new AesEncryptionService(), new RsaEncryptionService());
+        GamesResultsService gamesResultsService = new GamesResultsService(httpService);
 
         loginPage = new LoginPage(this, loginService);
         registerPage = new RegisterPage(this, registerService);
         mainMenuPage = new MainMenuPage(this, createLobbyService, joinLobbyService);
         lobbyPage = new LobbyPage(this);
         gamePage = new GamePage(this);
+        gamesResultsPage = new GamesResultsPage(this, gamesResultsService);
 
         cards.add(loginPage, LoginPage.class.getSimpleName());
         cards.add(registerPage, RegisterPage.class.getSimpleName());
         cards.add(mainMenuPage, MainMenuPage.class.getSimpleName());
         cards.add(lobbyPage, LobbyPage.class.getSimpleName());
         cards.add(gamePage, GamePage.class.getSimpleName());
+        cards.add(gamesResultsPage, GamesResultsPage.class.getSimpleName());
 
         add(cards);
         showLogin();
@@ -82,6 +86,11 @@ public class PingPongClient extends JFrame {
     public void showGame() {
         gamePage.init();
         cardLayout.show(cards, GamePage.class.getSimpleName());
+    }
+
+    public void showGamesResults() {
+        gamesResultsPage.init();
+        cardLayout.show(cards, GamesResultsPage.class.getSimpleName());
     }
 
     public void exit() {

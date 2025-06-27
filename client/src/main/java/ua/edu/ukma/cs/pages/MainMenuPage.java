@@ -27,12 +27,13 @@ public class MainMenuPage extends BasePage {
         createLobbyButton.addActionListener(this::onCreateLobby);
         JButton joinLobbyButton = new JButton("Join existing lobby");
         joinLobbyButton.addActionListener(this::onJoinLobby);
-        JButton viewGamesButton = new JButton("View game history");
+        JButton gamesResultsButton = new JButton("View games results");
+        gamesResultsButton.addActionListener(e -> app.showGamesResults());
         JButton exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> app.exit());
         buttonPanel.add(createLobbyButton);
         buttonPanel.add(joinLobbyButton);
-        buttonPanel.add(viewGamesButton);
+        buttonPanel.add(gamesResultsButton);
         buttonPanel.add(exitButton);
 
         setLayout(new GridBagLayout());

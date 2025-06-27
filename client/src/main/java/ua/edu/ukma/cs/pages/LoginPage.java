@@ -1,7 +1,6 @@
 package ua.edu.ukma.cs.pages;
 
 import ua.edu.ukma.cs.app.PingPongClient;
-import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.api.request.LoginUserRequestDto;
 import ua.edu.ukma.cs.services.LoginService;
 import ua.edu.ukma.cs.utils.DialogUtils;

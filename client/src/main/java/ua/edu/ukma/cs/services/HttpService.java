@@ -8,7 +8,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 public class HttpService {
@@ -25,10 +24,24 @@ public class HttpService {
 
     @SneakyThrows
     public HttpResponse<byte[]> get(String path) {
-        HttpRequest request = buildBaseRequest(path)
-                .GET()
-                .build();
-        return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        return get(path, Optional.empty());
+    }
+
+    @SneakyThrows
+    public HttpResponse<byte[]> get(String path, Object body) {
+        byte[] jsonBody = ObjectMapperHolder.get().writeValueAsBytes(body);
+        return get(path, Optional.of(jsonBody));
+    }
+
+    @SneakyThrows
+    private HttpResponse<byte[]> get(String path, Optional<byte[]> jsonBody) {
+        HttpRequest.Builder requestBuilder = buildBaseRequest(path)
+                .GET();
+        jsonBody.ifPresent(b -> requestBuilder
+                .method("GET", HttpRequest.BodyPublishers.ofByteArray(b))
+                .header("Content-Type", "application/json")
+        );
+        return client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofByteArray());
     }
 
     public HttpResponse<byte[]> post(String path) {
@@ -37,15 +50,15 @@ public class HttpService {
 
     @SneakyThrows
     public HttpResponse<byte[]> post(String path, Object body) {
-        String jsonBody = ObjectMapperHolder.get().writeValueAsString(body);
+        byte[] jsonBody = ObjectMapperHolder.get().writeValueAsBytes(body);
         return post(path, Optional.of(jsonBody));
     }
 
     @SneakyThrows
-    private HttpResponse<byte[]> post(String path, Optional<String> jsonBody) {
+    private HttpResponse<byte[]> post(String path, Optional<byte[]> jsonBody) {
         HttpRequest.Builder requestBuilder = buildBaseRequest(path)
                 .header("Content-Type", "application/json")
-                .POST(jsonBody.map(s -> HttpRequest.BodyPublishers.ofString(s, StandardCharsets.UTF_8)).orElseGet(HttpRequest.BodyPublishers::noBody));
+                .POST(jsonBody.map(HttpRequest.BodyPublishers::ofByteArray).orElseGet(HttpRequest.BodyPublishers::noBody));
 
         HttpRequest request = requestBuilder.build();
         return client.send(request, HttpResponse.BodyHandlers.ofByteArray());

@@ -38,7 +38,14 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     }
 
     public Optional<GameResultEntity> getById(int id) {
-        String sql = "SELECT * FROM game_results WHERE id = ?";
+        String sql = """
+        SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
+               c.username AS creator_username, o.username AS other_username
+        FROM game_results r
+            JOIN users c ON r.creator_id = c.id
+            JOIN users o ON r.other_user_id = o.id
+        WHERE id = ?
+        """;
         return withStatementInCurrentTransaction(sql, statement -> {
            statement.setInt(1, id);
            return queryOne(statement);
@@ -46,7 +53,13 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
     }
 
     public List<GameResultEntity> getAllByFilter(GameResultFilter filter) {
-        String sql = "SELECT * FROM game_results";
+        String sql = """
+        SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
+               c.username AS creator_username, o.username AS other_username
+        FROM game_results r
+            JOIN users c ON r.creator_id = c.id
+            JOIN users o ON r.other_user_id = o.id
+        """;
         sql = filter.addFilteringAndPagination(sql, FIELD_EXPRESSION_MAP);
         return withStatementInCurrentTransaction(sql, statement -> {
             filter.setParameters(statement);
@@ -71,7 +84,9 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
                 .otherScore(resultSet.getInt("other_score"))
                 .timeFinished(TimeUtils.mapToLocalDateTime(resultSet.getTimestamp("time_finished")))
                 .creatorId(resultSet.getInt("creator_id"))
+                .creatorUsername(resultSet.getString("creator_username"))
                 .otherUserId(resultSet.getInt("other_user_id"))
+                .otherUsername(resultSet.getString("other_username"))
                 .build();
     }
 }

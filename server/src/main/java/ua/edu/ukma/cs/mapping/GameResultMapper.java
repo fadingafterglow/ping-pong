@@ -14,7 +14,9 @@ public class GameResultMapper {
                 .otherScore(entity.getOtherScore())
                 .timeFinished(entity.getTimeFinished())
                 .creatorId(entity.getCreatorId())
+                .creatorUsername(entity.getCreatorUsername())
                 .otherUserId(entity.getOtherUserId())
+                .otherUsername(entity.getOtherUsername())
                 .build();
     }
 
