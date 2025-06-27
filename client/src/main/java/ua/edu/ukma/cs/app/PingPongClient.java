@@ -1,6 +1,7 @@
 package ua.edu.ukma.cs.app;
 
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import ua.edu.ukma.cs.connection.LobbyConnection;
 import ua.edu.ukma.cs.pages.*;
@@ -8,9 +9,14 @@ import ua.edu.ukma.cs.services.*;
 import ua.edu.ukma.cs.encryption.AesEncryptionService;
 import ua.edu.ukma.cs.tcp.decoders.PacketDecoder;
 import ua.edu.ukma.cs.tcp.encoders.PacketEncoder;
+import ua.edu.ukma.cs.utils.PropertiesUtils;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import javax.swing.*;
 import java.awt.*;
+import java.security.KeyStore;
+import java.util.Properties;
 
 @Slf4j
 public class PingPongClient extends JFrame {
@@ -37,13 +43,18 @@ public class PingPongClient extends JFrame {
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::cleanResources));
 
+        Properties properties = PropertiesUtils.loadProperties();
+
         appState = new AppState();
 
-        HttpService httpService = new HttpService(appState);
+        HttpService httpService = new HttpService(appState, buildSslContext(properties), properties);
         LoginService loginService = new LoginService(httpService);
         RegisterService registerService = new RegisterService(httpService);
         CreateLobbyService createLobbyService = new CreateLobbyService(httpService);
-        JoinLobbyService joinLobbyService = new JoinLobbyService(httpService, new PacketEncoder(), new PacketDecoder(), new AesEncryptionService(), new RsaEncryptionService());
+        JoinLobbyService joinLobbyService = new JoinLobbyService(
+                httpService, new PacketEncoder(), new PacketDecoder(),
+                new AesEncryptionService(), new RsaEncryptionService(), properties
+        );
         GamesResultsService gamesResultsService = new GamesResultsService(httpService);
         GamesResultsStatsService gamesResultsStatsService = new GamesResultsStatsService(httpService);
 
@@ -116,6 +127,20 @@ public class PingPongClient extends JFrame {
         } catch (Exception ex) {
             log.error("Error while cleaning resources", ex);
         }
+    }
+
+    @SneakyThrows
+    private SSLContext buildSslContext(Properties properties) {
+        char[] password = properties.getProperty("keystore.password").toCharArray();
+        KeyStore trustStore = KeyStore.getInstance("JKS");
+        trustStore.load(PingPongClient.class.getResourceAsStream("/truststore.jks"), password);
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(trustStore);
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(null, tmf.getTrustManagers(), null);
+        return sslContext;
     }
 
     public static void main(String[] args) {

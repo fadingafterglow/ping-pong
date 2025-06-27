@@ -4,21 +4,25 @@ import lombok.SneakyThrows;
 import ua.edu.ukma.cs.app.AppState;
 import ua.edu.ukma.cs.utils.ObjectMapperHolder;
 
+import javax.net.ssl.SSLContext;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 import java.util.Optional;
+import java.util.Properties;
 
 public class HttpService {
 
-    private static final String BASE_URL = "http://localhost:8080";
-
+    private final String baseUrl;
     private final HttpClient client;
     private final AppState appState;
 
-    public HttpService(AppState appState) {
-        this.client = HttpClient.newHttpClient();
+    public HttpService(AppState appState, SSLContext sslContext, Properties properties) {
+        this.baseUrl = properties.getProperty("api.server.url");
+        this.client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build();
         this.appState = appState;
     }
 
@@ -66,7 +70,7 @@ public class HttpService {
 
     private HttpRequest.Builder buildBaseRequest(String path) {
         var requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + path));
+                .uri(URI.create(baseUrl + path));
 
         String jwtToken = appState.getJwtToken();
         if (jwtToken != null) {

@@ -2,6 +2,7 @@ package ua.edu.ukma.cs.services;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Properties;
 import java.util.UUID;
 
 import lombok.SneakyThrows;
@@ -20,11 +21,12 @@ public class JoinLobbyService {
     private final IDecoder<PacketIn> decoder;
     private final ISymmetricEncryptionService symmetricEncryptionService;
     private final IAsymmetricEncryptionService asymmetricEncryptionService;
+    private final Properties properties;
 
     @SneakyThrows
     public LobbyConnection joinLobby(UUID lobbyId, String token) {
         byte[] publicKey = httpService.get("/public-key").body();
-        LobbyConnection lobbyConnection = new LobbyConnection(encoder, decoder, asymmetricEncryptionService, symmetricEncryptionService);
+        LobbyConnection lobbyConnection = new LobbyConnection(encoder, decoder, asymmetricEncryptionService, symmetricEncryptionService, properties);
         lobbyConnection.init(lobbyId, token, publicKey);
         return lobbyConnection;
     }
