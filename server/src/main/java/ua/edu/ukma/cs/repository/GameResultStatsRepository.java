@@ -12,14 +12,14 @@ public class GameResultStatsRepository extends BaseRepository<GameResultStats> {
         String sql = """
                 WITH all_games_of_user AS (
                     SELECT (CASE WHEN creator_id = ? THEN creator_score ELSE other_score END) AS this_user_score,
-                           (CASE WHEN creator_id = ? THEN other_score ELSE creator_score END) AS other_user_score,
+                           (CASE WHEN creator_id = ? THEN other_score ELSE creator_score END) AS other_user_score
                     FROM game_results
                     WHERE creator_id = ? OR other_user_id = ?
                 )
                 SELECT COUNT(*) AS total_games,
-                       COUNT FILTER (WHERE this_user_score > other_user_score) AS wins,
+                       COUNT(*) FILTER (WHERE this_user_score > other_user_score) AS wins,
                        AVG(this_user_score) AS average_score
-                FROM all_games_of_user;
+                FROM all_games_of_user
                 """;
 
         return withStatementInCurrentTransaction(sql, statement -> {
