@@ -40,27 +40,27 @@ public class GameResultRepository extends BaseRepository<GameResultEntity> {
 
     public Optional<GameResultEntity> getById(int id) {
         String sql = """
-        SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
-               c.username AS creator_username, o.username AS other_username
-        FROM game_results r
-            JOIN users c ON r.creator_id = c.id
-            JOIN users o ON r.other_user_id = o.id
-        WHERE id = ?
-        """;
+                SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
+                       c.username AS creator_username, o.username AS other_username
+                FROM game_results r
+                    JOIN users c ON r.creator_id = c.id
+                    JOIN users o ON r.other_user_id = o.id
+                WHERE id = ?
+                """;
         return withStatementInCurrentTransaction(sql, statement -> {
-           statement.setInt(1, id);
-           return queryOne(statement);
+            statement.setInt(1, id);
+            return queryOne(statement);
         });
     }
 
     public List<GameResultEntity> getAllByFilter(GameResultFilter filter) {
         String sql = """
-        SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
-               c.username AS creator_username, o.username AS other_username
-        FROM game_results r
-            JOIN users c ON r.creator_id = c.id
-            JOIN users o ON r.other_user_id = o.id
-        """;
+                SELECT r.id, r.creator_score, r.other_score, r.time_finished, r.creator_id, r.other_user_id,
+                       c.username AS creator_username, o.username AS other_username
+                FROM game_results r
+                    JOIN users c ON r.creator_id = c.id
+                    JOIN users o ON r.other_user_id = o.id
+                """;
         sql = filter.addFilteringAndPagination(sql, FIELD_EXPRESSION_MAP);
         return withStatementInCurrentTransaction(sql, statement -> {
             filter.setParameters(statement);
